@@ -1,0 +1,2 @@
+# Ignore any virtual environment directory in subsequent folders
+.venv/
