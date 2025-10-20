@@ -7,11 +7,9 @@ from kivy.uix.button import Button
 from kivy.graphics import Color, Ellipse, Line
 from kivy.input.postproc.dejitter import InputPostprocDejitter
 
+
 class MyPaintWidget(Widget):
 
-    avg_x = None
-    avg_y = None
-    
     def on_touch_down(self, touch):
         color = (random(), 1, 1)
         with self.canvas:
@@ -20,7 +18,6 @@ class MyPaintWidget(Widget):
             self.avg_x = touch.x
             self.avg_y = touch.y
             self.touch_down_time = time.perf_counter()
-            #Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
             touch.ud['line'] = Line(points=(touch.x, touch.y))
 
     def on_touch_move(self, touch):
@@ -29,27 +26,28 @@ class MyPaintWidget(Widget):
         if 'line' in touch.ud.keys():
             touch.ud['line'].points += [self.avg_x, self.avg_y]
 
+
 class MyPaintApp(App):
+
     def build_config(self, config):
-        config.setdefaults('postproc',{
-            'jitter_distance':'1.000',
-            'retain_time':'500',
-            'retain_distance':'200'
+        config.setdefaults('postproc', {
+            'jitter_distance': '1.000',
+            'retain_time': '500',
+            'retain_distance': '200'
         })
 
     def build(self):
         parent = Widget()
         self.painter = MyPaintWidget()
-        config = self.config
-        clearbtn = Button(text='Clear')
-        clearbtn.bind(on_release=self.clear_canvas)
-        dejitter = InputPostprocDejitter()
         parent.add_widget(self.painter)
+        clearbtn = Button(text='Submit')
+        clearbtn.bind(on_release=self.submit_character)
         parent.add_widget(clearbtn)
         return parent
-
-    def clear_canvas(self, obj):
-        self.painter.canvas.clear()
+    
+    def submit_character(self, obj):
+        print(Line.points)
+    
 
 
 if __name__ == '__main__':

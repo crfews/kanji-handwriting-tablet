@@ -21,3 +21,4 @@ Run the following in terminal after activating your venv:
 
 Once you have a venv setup, you can make it identical by entering your venv and running the following:
   pip install -r requirements.txt
+  
