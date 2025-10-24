@@ -5,7 +5,8 @@ from numpy.typing import NDArray
 # GLOBALS #####################################################################
 
 SHELVE_NAME = 'recognizer.shelve'
-STROKE_CHUNK_COUNT = 3
+#STROKE_CHUNK_COUNT = 3
+STROKE_CHUNK_COUNT = 8
 
 # FUNCTIONS ###################################################################
 

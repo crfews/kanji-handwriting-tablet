@@ -88,8 +88,15 @@ class MyPaintApp(App):
             self.characters = self.characters[1:]
             with open(KANJI_TO_ADD_FILE, 'w') as ofile:
                 ofile.write('\n'.join(self.characters))
-
+        
         self.painter.reset()
+        for c in self.characters:
+            print(f'\t{c}')
+        if len(self.characters) > 0:
+            print(f'draw {self.characters[0]}')
+        else:
+            print('No characters to draw')
+
 
 
 # SCRIPT ENTRY POINT ##########################################################
