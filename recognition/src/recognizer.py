@@ -6,7 +6,6 @@ from kivy.graphics import Color, Ellipse, Line
 from kivy.input.motionevent import MotionEvent
 import stroke_processor as sp
 
-
 # GLOBALS #####################################################################
 
 DB_FILE_NAME = 'sqlite.db'
