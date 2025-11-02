@@ -2,3 +2,4 @@
 .venv/
 .qtcreator/
 pyproject.toml.user
+.dir-locals.el
