@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>652</width>
+    <height>421</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QTreeWidget" name="treeWidget_2">
+      <column>
+       <property name="text">
+        <string>Level</string>
+       </property>
+      </column>
+      <item>
+       <property name="text">
+        <string>1</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Hiragana</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>あ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>い</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string> う</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>え</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>お</string>
+         </property>
+        </item>
+       </item>
+       <item>
+        <property name="text">
+         <string>Katakana</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>ア</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>イ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ウ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>エ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>オ</string>
+         </property>
+        </item>
+       </item>
+      </item>
+      <item>
+       <property name="text">
+        <string>2</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Hiragana</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>か</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>き</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>く</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>け</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>こ</string>
+         </property>
+        </item>
+       </item>
+       <item>
+        <property name="text">
+         <string>Katakana</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>カ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>キ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ク</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ケ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>コ</string>
+         </property>
+        </item>
+       </item>
+      </item>
+     </widget>
+    </item>
+    <item row="0" column="1" rowspan="3">
+     <widget class="QScrollBar" name="verticalScrollBar">
+      <property name="orientation">
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QPushButton" name="pushButton">
+      <property name="text">
+       <string>Study!</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
