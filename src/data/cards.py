@@ -13,4 +13,12 @@ class Card:
         self.type = config['type']
         self.max_related_id = config['max_related_id']
 
+    # adds to databsse
+    def insert(self):
+        pass
+    
+    
+
+
+
 
