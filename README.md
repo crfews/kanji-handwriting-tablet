@@ -7,9 +7,11 @@ Run the following in terminal:
   python -m venv .venv
 
 Then run the following:
-  source ./.venv/bin/activate
+  `source ./.venv/bin/activate`
 
 You should activate your venv every time you work on the code to ensure that your environment is the same as everybody else.
+
+To ensure you have the correct requirements, run `pip install -r ./src/requirements.txt`
 
 ### Create 'requirements.txt' to Share Your Packages
 _Only perform this if you have added a new package_
