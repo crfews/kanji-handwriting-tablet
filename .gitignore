@@ -1,5 +1,6 @@
 # Ignore any virtual environment directory in subsequent folders
 .venv/
 .qtcreator/
+__pycache__/
 pyproject.toml.user
 .dir-locals.el
