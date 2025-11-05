@@ -1,0 +1,7 @@
+nodeenv==1.9.1
+numpy==2.3.4
+PyQt6==6.10.0
+PyQt6-Qt6==6.10.0
+PyQt6_sip==13.10.2
+pyright==1.1.407
+typing_extensions==4.15.0
