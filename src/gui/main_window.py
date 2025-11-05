@@ -2,6 +2,7 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtCore import QMargins
 from gui.handwriting_manager import HandwritingManager
+from gui.card_window import Ui_Cards_Interface
 
 
 class MainWindow(QMainWindow):
@@ -27,7 +28,9 @@ class MainWindow(QMainWindow):
 
         # Add pages
         self.add_page_to_menu('Handwriting Manager', HandwritingManager(self))
-        self.setCentralWidget(self.pages['Handwriting Manager'])
+        #self.setCentralWidget(self.pages['Handwriting Manager'])
+        self.ui = Ui_Cards_Interface()
+        self.ui.setupUi(self)
 
 
     def add_page_to_menu(self, page_name, page):
