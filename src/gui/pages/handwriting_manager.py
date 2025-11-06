@@ -1,7 +1,8 @@
 from PyQt6.QtCore import QMargins
 from PyQt6.QtWidgets import QWidget, QFormLayout, QLineEdit, QTabWidget, QMessageBox
-from gui.writing_widgets import CharacterDrawing
+from gui.widgets.writing_widgets import CharacterDrawing
 from recognition import stroke_processor as sp
+
 
 class AddUpdateCharacterTab(QWidget):
 

@@ -1,7 +1,8 @@
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtCore import QMargins
-from gui.handwriting_manager import HandwritingManager
+from gui.pages.handwriting_manager import HandwritingManager
+from gui.pages.cards_interface import CardsInterface
 
 
 class MainWindow(QMainWindow):
@@ -11,7 +12,6 @@ class MainWindow(QMainWindow):
     home_page = None
     menu_bar = None
     pages_menu = None
-    pages = {}
     
     def __init__(self):
         """Constructor for the main window."""
@@ -26,17 +26,15 @@ class MainWindow(QMainWindow):
         self.pages_menu = self.menu_bar.addMenu("&Pages")
 
         # Add pages
-        self.add_page_to_menu('Handwriting Manager', HandwritingManager(self))
-        self.setCentralWidget(self.pages['Handwriting Manager'])
+        self.add_page_to_menu('Handwriting Manager', lambda: HandwritingManager(self))
+        self.add_page_to_menu('Cards Interface', lambda: CardsInterface(self))
 
 
-    def add_page_to_menu(self, page_name, page):
-        page.setContentsMargins(QMargins(30, 60, 30, 30))
-        if page_name in self.pages:
-            pass
-        self.pages[page_name] = page
+    def add_page_to_menu(self, page_name, page_lambda):
+        def make_page():
+            page = page_lambda()
+            page.setContentsMargins(QMargins(30, 60, 30, 30))
         page_action = QAction(page_name, self)
-        page_action.triggered.connect(
-           lambda: self.setCentralWidget(page))
+        page_action.triggered.connect(lambda: self.setCentralWidget(page_lambda()))
         self.pages_menu.addAction(page_action)
     
