@@ -97,7 +97,6 @@ def _close_db_no_sync(db: shelve.DbfilenameShelf):
     global _db_open
     if not _db_open:
         raise RuntimeError("'_close_db_no_sync' may not be called if not open")
-    db.clear()
     db.close()
     _db_open = False
 
@@ -161,6 +160,28 @@ def set_chunk_count(chunk_count: int):
         _close_db(db)
 
 
+def fetch_char_strokes(char: str) -> list[list[float]] | None:
+    db = _open_db()
+    strokes = None
+    try:
+        if char in db['characters']:
+            strokes = db['characters'][char]['raw']
+    finally:
+        _close_db_no_sync(db)
+    return strokes
+        
+
+def get_stored_chars() -> list[str]:
+    chars = []
+
+    db = _open_db()
+    try:
+        chars = [k for k in db['characters']]
+    finally:
+        _close_db_no_sync(db)
+    return chars
+
+
 def search_strokes(strokes: list[list[float]]) -> str | None:
 
     stroke_count = len(strokes)
@@ -170,19 +191,20 @@ def search_strokes(strokes: list[list[float]]) -> str | None:
 
     db = _open_db()
     try:
-        chunk_cnt = db['chunk_cnt']
+        chunk_cnt = db['chunk_count']
         this_processed = _process_strokes(strokes, chunk_cnt)
         
-        of_stroke_count = db['processed'][stroke_count]
+        if stroke_count in db['processed']:
+            of_stroke_count = db['processed'][stroke_count]
 
-        for k in of_stroke_count:
-            val = of_stroke_count[k]
-            sub_arr = np.absolute(val - this_processed)
-            difference_mean = np.mean(sub_arr)
+            for k in of_stroke_count:
+                val = of_stroke_count[k]
+                sub_arr = np.absolute(val - this_processed)
+                difference_mean = np.mean(sub_arr)
 
-            if lowest_mean is None or lowest_mean > difference_mean:
-                lowest_mean = difference_mean
-                found_char = k
+                if lowest_mean is None or lowest_mean > difference_mean:
+                    lowest_mean = difference_mean
+                    found_char = k
     finally:
         _close_db_no_sync(db)
 
