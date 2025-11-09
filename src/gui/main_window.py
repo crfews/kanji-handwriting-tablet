@@ -1,8 +1,9 @@
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMainWindow
-from PyQt6.QtCore import QMargins
+from PyQt6.QtWidgets import QMainWindow, QWidget, QFormLayout,  QLabel, QVBoxLayout, QPushButton, QStackedWidget
+from PyQt6.QtCore import QMargins, Qt
 from gui.pages.handwriting_manager import HandwritingManager
 from gui.pages.cards_interface import CardsInterface
+
 
 
 class MainWindow(QMainWindow):
@@ -25,7 +26,25 @@ class MainWindow(QMainWindow):
         self.menu_bar = self.menuBar()
         self.pages_menu = self.menu_bar.addMenu("&Pages")
 
-        # Add pages
+        # Build the home page
+        self.home_page = self.build_home_page()
+        self.handwriting_page = HandwritingManager(self)
+        self.cards_page = CardsInterface(self)
+
+        # Create stacked widget to hold all pages
+        self.stack = QStackedWidget()
+        self.setCentralWidget(self.stack)
+
+        # Add pages to stack
+        self.stack.addWidget(self.home_page)
+        self.stack.addWidget(self.handwriting_page)
+        self.stack.addWidget(self.cards_page)
+
+        # Start with home
+        self.stack.setCurrentWidget(self.home_page)
+
+
+        # Add pages to the menu
         self.add_page_to_menu('Handwriting Manager', lambda: HandwritingManager(self))
         self.add_page_to_menu('Cards Interface', lambda: CardsInterface(self))
 
@@ -38,3 +57,30 @@ class MainWindow(QMainWindow):
         page_action.triggered.connect(lambda: self.setCentralWidget(page_lambda()))
         self.pages_menu.addAction(page_action)
     
+    def build_home_page(self):
+        """Builds the centered landing page UI."""
+        page = QWidget()
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Title
+        title = QLabel("Kanji Learner's App")
+        title.setStyleSheet("font-size: 40px; font-weight: bold; margin-bottom: 30px;")
+        title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        # Buttons
+        btn_handwriting = QPushButton("Handwriting Manager")
+        btn_cards = QPushButton("Cards Interface")
+
+
+        btn_handwriting.clicked.connect(lambda: self.stack.setCurrentWidget(self.handwriting_page))
+        btn_cards.clicked.connect(lambda: self.stack.setCurrentWidget(self.cards_page))
+
+        layout.addWidget(title)
+        layout.addSpacing(20)
+        layout.addWidget(btn_handwriting)
+        layout.addWidget(btn_cards)
+
+
+        page.setLayout(layout)
+        return page
