@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
         self.home_page = self.build_home_page()
         self.handwriting_page = HandwritingManager(self)
         self.cards_page = CardsInterface(self)
+        self.cards_type = CardTypeManager(self)
 
         # Create stacked widget to hold all pages
         self.stack = QStackedWidget()
@@ -41,6 +42,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.handwriting_page)
         self.stack.addWidget(self.cards_page)
+        self.stack.addWidget(self.cards_type)
 
         # Start with home
         self.stack.setCurrentWidget(self.home_page)
@@ -75,15 +77,19 @@ class MainWindow(QMainWindow):
         # Buttons
         btn_handwriting = QPushButton("Handwriting Manager")
         btn_cards = QPushButton("Cards Interface")
+        btn_type = QPushButton("Cards Type Manager")
 
 
         btn_handwriting.clicked.connect(lambda: self.stack.setCurrentWidget(self.handwriting_page))
         btn_cards.clicked.connect(lambda: self.stack.setCurrentWidget(self.cards_page))
+        btn_type.clicked.connect(lambda: self.stack.setCurrentWidget(self.cards_type))
+
 
         layout.addWidget(title)
         layout.addSpacing(20)
         layout.addWidget(btn_handwriting)
         layout.addWidget(btn_cards)
+        layout.addWidget(btn_type)
 
 
         page.setLayout(layout)
