@@ -1,8 +1,9 @@
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtWidgets import QMainWindow, QMenuBar
 from PyQt6.QtCore import QMargins
 from gui.pages.handwriting_manager import HandwritingManager
 from gui.pages.cards_interface import CardsInterface
+from gui.pages.card_type_interface import CardTypeManager
 
 
 class MainWindow(QMainWindow):
@@ -23,11 +24,13 @@ class MainWindow(QMainWindow):
 
         # Add the global application menubar
         self.menu_bar = self.menuBar()
+        assert self.menu_bar is not None
         self.pages_menu = self.menu_bar.addMenu("&Pages")
 
         # Add pages
         self.add_page_to_menu('Handwriting Manager', lambda: HandwritingManager(self))
         self.add_page_to_menu('Cards Interface', lambda: CardsInterface(self))
+        self.add_page_to_menu('Cards Type Viewer', lambda: CardTypeManager(self))
 
 
     def add_page_to_menu(self, page_name, page_lambda):
@@ -36,5 +39,6 @@ class MainWindow(QMainWindow):
             page.setContentsMargins(QMargins(30, 60, 30, 30))
         page_action = QAction(page_name, self)
         page_action.triggered.connect(lambda: self.setCentralWidget(page_lambda()))
+        assert self.pages_menu is not None
         self.pages_menu.addAction(page_action)
     
