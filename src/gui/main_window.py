@@ -4,6 +4,7 @@ from PyQt6.QtCore import QMargins, Qt
 from gui.pages.handwriting_manager import HandwritingManager
 from gui.pages.cards_interface import CardsInterface
 from gui.pages.card_type_interface import CardTypeManager
+from gui.pages.home_page import HomePage
 
 
 
@@ -29,7 +30,8 @@ class MainWindow(QMainWindow):
         self.pages_menu = self.menu_bar.addMenu("&Pages")
 
         # Build the home page
-        self.home_page = self.build_home_page()
+        # self.home_page = self.build_home_page()
+        self.home_page = HomePage(self)
         self.handwriting_page = HandwritingManager(self)
         self.cards_page = CardsInterface(self)
         self.cards_type = CardTypeManager(self)
