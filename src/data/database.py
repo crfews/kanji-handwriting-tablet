@@ -9,6 +9,7 @@ from sqlalchemy import (
     Table,
     Column,
     Integer,
+    Float,
     String,
     Date,
     Boolean,
@@ -22,7 +23,7 @@ from sqlalchemy import (
 #### CREATE DATABASE ENGINE ####################################################
 
 _db_path = os.path.join(os.path.dirname(__file__), "db.sqlite3")
-_engine = create_engine(f"sqlite+pysqlite:///{_db_path}", echo=True)
+eng = create_engine(f"sqlite+pysqlite:///{_db_path}", echo=True)
 #_engine = create_engine(f"sqlite+pysqlite:///:memory:", echo=True)
 _metadata_obj = MetaData()
 
@@ -52,16 +53,14 @@ field_type_table = Table(
            Integer,
            primary_key=True,
            nullable=False),
-    Column("card_type_id",
-           ForeignKey("card_types.id", ondelete="CASCADE"),
-           nullable=False),
+    Column("card_type_id", ForeignKey("card_types.id", ondelete="CASCADE"), nullable=False),
     Column("name",
            String,
            nullable=False),
     Column("is_text",
            Boolean,
            nullable=False),
-    Column("is_int",
+    Column("is_number",
            Boolean,
            nullable=False),
     Column("is_pickle",
@@ -113,8 +112,8 @@ card_fields_table = Table(
     Column("text_field",
            String,
            nullable=True),
-    Column("int_field",
-           Integer,
+    Column("number_field",
+           Float,
            nullable=True),
     Column("pickle_field",
            PickleType,
@@ -125,7 +124,7 @@ card_fields_table = Table(
 
 def add_card_type(name: str) -> int:
     """Create a new card type and return its ID."""
-    with _engine.begin() as conn:
+    with eng.begin() as conn:
         result = conn.execute(
             insert(card_types_table)
             .returning(card_types_table.c.id)
@@ -150,7 +149,7 @@ def add_field_type(card_type_id: int,
         assert (not (is_int or is_text))
         
         
-    with _engine.begin() as conn:
+    with eng.begin() as conn:
         result = conn.execute(
             insert(field_type_table)
             .returning(field_type_table.c.id)
@@ -171,7 +170,7 @@ def add_card(type_id: int,
              due_date_increment: int=0,
              due_date: datetime.date=datetime.date.max) -> int:
     """Create a new card of a given type."""
-    with _engine.begin() as conn:
+    with eng.begin() as conn:
         result = conn.execute(
             insert(cards_table)
             .returning(cards_table.c.id)
@@ -192,7 +191,7 @@ def add_card_field(card_id: int,
                    int_field=None,
                    pickle_field=None) -> int:
     """Add a field to a card, selecting the correct field encoding."""
-    with _engine.begin() as conn:
+    with eng.begin() as conn:
         result = conn.execute(
             insert(card_fields_table)
             .returning(card_fields_table.c.id)
@@ -209,7 +208,7 @@ def add_card_field(card_id: int,
 
 
 def get_card_with_fields(card_id: int):
-    with _engine.begin() as conn:
+    with eng.begin() as conn:
 
         # 1. Fetch the card itself
         card_row = conn.execute(
@@ -278,7 +277,7 @@ def get_all_card_types_with_field_types():
         ...
     }
     """
-    with _engine.begin() as conn:
+    with eng.begin() as conn:
         # Step 1: Fetch all card types
         card_types = conn.execute(
             select(card_types_table.c.id, card_types_table.c.name)
@@ -311,74 +310,81 @@ def get_all_card_types_with_field_types():
 
         return result
 
+
 #### MODULE FOOTER #############################################################
 
-
-def _initialize_defaults():
-    with _engine.begin() as conn:
-
-        defaults = {
-            # field_name: is_text | is_int | is_pickle
-
-            "Character": [
-                ("char",               True,  False, False),
-                ("stroke count",       False, True,  False),
-                ("raw strokes",        False, False, True),
-                ("processed strokes",  False, False, True),
-                ("meaning",            True,  False, False),
-                ("romaji",             True,  False, False),
-                ("onyomi",             True,  False, False),
-            ],
-            "Word": [
-                ("writings",           True,  False,  False),
-                ("grammar",            True,  False,  False),
-                ("kana writing",       True,  False,  False),
-                ("meaning",            True,  False,  False),
-            ],
-
-        }
-
-        for card_type_name, field_specs in defaults.items():
-
-            # Check if the card type already exists
-            existing = conn.execute(
-                select(card_types_table.c.id).where(
-                    card_types_table.c.name == card_type_name
-                )
-            ).fetchone()
-
-            # Insert new card type if missing
-            if existing is None:
-                result = conn.execute(
-                    insert(card_types_table)
-                    .returning(card_types_table.c.id)
-                    .values(name=card_type_name)
-                )
-                card_type_id = result.scalar_one()
-            else:
-                card_type_id = existing.id
-
-            # Insert each field type *only if it does not already exist*
-            for name, is_text, is_int, is_pickle in field_specs:
-                existing_field = conn.execute(
-                    select(field_type_table.c.id).where(
-                        (field_type_table.c.card_type_id == card_type_id) &
-                        (field_type_table.c.name == name)
-                    )
-                ).fetchone()
-
-                if existing_field is None:
-                    conn.execute(
-                        insert(field_type_table).values(
-                            card_type_id=card_type_id,
-                            name=name,
-                            is_text=is_text,
-                            is_int=is_int,
-                            is_pickle=is_pickle
-                        )
-                    )
-
-
 # Initialize the database
-_metadata_obj.create_all(_engine)
-_initialize_defaults()
+_metadata_obj.create_all(eng)
+#_initialize_defaults()
+
+
+
+
+
+
+
+
+
+# def _initialize_defaults():
+#     with eng.begin() as conn:
+
+#         defaults = {
+#             # field_name: is_text | is_int | is_pickle
+
+#             "Character": [
+#                 ("char",               True,  False, False),
+#                 ("stroke count",       False, True,  False),
+#                 ("raw strokes",        False, False, True),
+#                 ("processed strokes",  False, False, True),
+#                 ("meaning",            True,  False, False),
+#                 ("romaji",             True,  False, False),
+#                 ("onyomi",             True,  False, False),
+#             ],
+#             "Word": [
+#                 ("writings",           True,  False,  False),
+#                 ("grammar",            True,  False,  False),
+#                 ("kana writing",       True,  False,  False),
+#                 ("meaning",            True,  False,  False),
+#             ],
+
+#         }
+
+#         for card_type_name, field_specs in defaults.items():
+
+#             # Check if the card type already exists
+#             existing = conn.execute(
+#                 select(card_types_table.c.id).where(
+#                     card_types_table.c.name == card_type_name
+#                 )
+#             ).fetchone()
+
+#             # Insert new card type if missing
+#             if existing is None:
+#                 result = conn.execute(
+#                     insert(card_types_table)
+#                     .returning(card_types_table.c.id)
+#                     .values(name=card_type_name)
+#                 )
+#                 card_type_id = result.scalar_one()
+#             else:
+#                 card_type_id = existing.id
+
+#             # Insert each field type *only if it does not already exist*
+#             for name, is_text, is_int, is_pickle in field_specs:
+#                 existing_field = conn.execute(
+#                     select(field_type_table.c.id).where(
+#                         (field_type_table.c.card_type_id == card_type_id) &
+#                         (field_type_table.c.name == name)
+#                     )
+#                 ).fetchone()
+
+#                 if existing_field is None:
+#                     conn.execute(
+#                         insert(field_type_table).values(
+#                             card_type_id=card_type_id,
+#                             name=name,
+#                             is_text=is_text,
+#                             is_int=is_int,
+#                             is_pickle=is_pickle
+#                         )
+#                     )
