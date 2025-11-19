@@ -29,8 +29,6 @@ class MainWindow(QMainWindow):
         assert self.menu_bar is not None
         self.pages_menu = self.menu_bar.addMenu("&Pages")
 
-        # Build the home page
-        # self.home_page = self.build_home_page()
         self.home_page = HomePage(self)
         self.handwriting_page = HandwritingManager(self)
         self.cards_page = CardsInterface(self)
@@ -46,11 +44,14 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.cards_page)
         self.stack.addWidget(self.cards_type)
 
+        self.connect_home_page_buttons()
+        
         # Start with home
         self.stack.setCurrentWidget(self.home_page)
 
 
         # Add pages to the menu
+        self.add_page_to_menu('Home', lambda: HomePage(self))
         self.add_page_to_menu('Handwriting Manager', lambda: HandwritingManager(self))
         self.add_page_to_menu('Cards Interface', lambda: CardsInterface(self))
         self.add_page_to_menu('Cards Type Viewer', lambda: CardTypeManager(self))
@@ -64,35 +65,16 @@ class MainWindow(QMainWindow):
         page_action.triggered.connect(lambda: self.setCentralWidget(page_lambda()))
         assert self.pages_menu is not None
         self.pages_menu.addAction(page_action)
+
+    def connect_home_page_buttons(self):
+        """Connect home page buttons to their respective pages"""
+        self.home_page.btn_handwriting.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.handwriting_page)
+        )
+        self.home_page.btn_cards.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.cards_page)
+        )
+        self.home_page.btn_type.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.cards_type)
+        )
     
-    def build_home_page(self):
-        """Builds the centered landing page UI."""
-        page = QWidget()
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Title
-        title = QLabel("Kanji Learner's App")
-        title.setStyleSheet("font-size: 40px; font-weight: bold; margin-bottom: 30px;")
-        title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-
-        # Buttons
-        btn_handwriting = QPushButton("Handwriting Manager")
-        btn_cards = QPushButton("Cards Interface")
-        btn_type = QPushButton("Cards Type Manager")
-
-
-        btn_handwriting.clicked.connect(lambda: self.stack.setCurrentWidget(self.handwriting_page))
-        btn_cards.clicked.connect(lambda: self.stack.setCurrentWidget(self.cards_page))
-        btn_type.clicked.connect(lambda: self.stack.setCurrentWidget(self.cards_type))
-
-
-        layout.addWidget(title)
-        layout.addSpacing(20)
-        layout.addWidget(btn_handwriting)
-        layout.addWidget(btn_cards)
-        layout.addWidget(btn_type)
-
-
-        page.setLayout(layout)
-        return page
