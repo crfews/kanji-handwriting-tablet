@@ -4,6 +4,7 @@ from PyQt6.QtCore import QMargins
 from gui.pages.handwriting_manager import HandwritingManager
 from gui.pages.cards_interface import CardsInterface
 from gui.pages.card_type_interface import CardTypeManager
+from gui.pages.QNAPage import QNAPage
 
 
 class MainWindow(QMainWindow):
@@ -31,6 +32,9 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('Handwriting Manager', lambda: HandwritingManager(self))
         self.add_page_to_menu('Cards Interface', lambda: CardsInterface(self))
         self.add_page_to_menu('Cards Type Viewer', lambda: CardTypeManager(self))
+        self.add_page_to_menu('QNA', lambda: QNAPage(self))
+
+        
 
 
     def add_page_to_menu(self, page_name, page_lambda):
