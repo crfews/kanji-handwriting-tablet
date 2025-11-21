@@ -5,6 +5,8 @@ from gui.pages.handwriting_manager import HandwritingManager
 from gui.pages.cards_interface import CardsInterface
 from gui.pages.card_type_interface import CardTypeManager
 from gui.pages.review_scheduler import ReviewScheduler
+from gui.pages.QNAPage import QNAPage
+
 
 class MainWindow(QMainWindow):
     """The class acting as the root widget for the whole application"""
@@ -32,6 +34,10 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('Cards Interface', lambda: CardsInterface(self))
         self.add_page_to_menu('Cards Type Viewer', lambda: CardTypeManager(self))
         self.add_page_to_menu('Review', lambda: ReviewScheduler(self))
+        self.add_page_to_menu('QNA', lambda: QNAPage(self))
+
+        
+
 
     def add_page_to_menu(self, page_name, page_lambda):
         def make_page():
