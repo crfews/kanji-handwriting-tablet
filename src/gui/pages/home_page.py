@@ -29,7 +29,7 @@ class HomePage(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Title
-        title = QLabel("Kanji Learner's App")
+        title = QLabel("Kanji Handwriting Tool")
         title.setStyleSheet("font-size: 40px; font-weight: bold; margin-bottom: 30px;")
         title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
