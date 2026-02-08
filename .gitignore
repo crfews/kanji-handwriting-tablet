@@ -7,3 +7,4 @@ pyproject.toml.user
 .envrc
 .direnv/
 *.bak
+.DS_Store
