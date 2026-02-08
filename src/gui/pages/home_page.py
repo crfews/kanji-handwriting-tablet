@@ -53,6 +53,8 @@ class HomePage(QWidget):
         self.btn_handwriting = QPushButton("Handwriting Manager")
         self.btn_cards = QPushButton("Cards Interface")
         self.btn_type = QPushButton("Cards Type Manager")
+        self.btn_review = QPushButton("Review")
+        self.btn_qna = QPushButton("QNA")
 
         layout.addWidget(title)
         layout.addSpacing(20)
@@ -60,5 +62,7 @@ class HomePage(QWidget):
         layout.addWidget(self.btn_handwriting)
         layout.addWidget(self.btn_cards)
         layout.addWidget(self.btn_type)
+        layout.addWidget(self.btn_review)
+        layout.addWidget(self.btn_qna)
 
         self.setLayout(layout)

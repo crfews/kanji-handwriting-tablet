@@ -17,6 +17,7 @@ class MainWindow(QMainWindow):
     home_page = None
     menu_bar = None
     pages_menu = None
+
     
     def __init__(self):
         """Constructor for the main window."""
@@ -35,6 +36,8 @@ class MainWindow(QMainWindow):
         self.handwriting_page = HandwritingManager(self)
         self.cards_page = CardsInterface(self)
         self.cards_type = CardTypeManager(self)
+        self.review = ReviewScheduler(self)
+        self.qna = QNAPage(self)
 
         # Create stacked widget to hold all pages
         self.stack = QStackedWidget()
@@ -45,6 +48,9 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.handwriting_page)
         self.stack.addWidget(self.cards_page)
         self.stack.addWidget(self.cards_type)
+        self.stack.addWidget(self.review)
+        self.stack.addWidget(self.qna)
+
 
         self.connect_home_page_buttons()
         
@@ -82,5 +88,11 @@ class MainWindow(QMainWindow):
         )
         self.home_page.btn_type.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.cards_type)
+        )
+        self.home_page.btn_review.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.review)
+        )
+        self.home_page.btn_review.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.qna)
         )
     
