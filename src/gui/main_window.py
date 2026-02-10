@@ -70,9 +70,6 @@ class MainWindow(QMainWindow):
         self.home_page.btn_cards.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.cards_page)
         )
-        self.home_page.btn_type.clicked.connect(
-            lambda: self.stack.setCurrentWidget(self.cards_type)
-        )
         self.home_page.btn_review.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.review)
         )
