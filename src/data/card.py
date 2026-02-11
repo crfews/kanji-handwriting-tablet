@@ -11,12 +11,297 @@ from __future__ import annotations
 from typing import Mapping
 import sqlalchemy as sqla
 from datetime import date
-from .database import card_table, maybe_connection, maybe_connection_commit
-from .card_relation import CardRelation
+from .database import card_table, card_relation_table, maybe_connection, maybe_connection_commit
 
 ################################################################################
 # Class Definition
 ################################################################################
+
+
+class CardRelation:
+    # Class Variables ##########################################################
+    _instances_by_id: dict[int, CardRelation] = {}
+    _searched_db_a_id: dict[int, bool] = {}
+    _searched_db_b_id: dict[int, bool] = {}
+    _searched_db: bool = False
+    
+    # Class Methods ############################################################
+    @classmethod
+    def _encache(cls, cr: CardRelation):
+        assert cr._db_id not in cls._instances_by_id
+        cls._instances_by_id[cr._db_id] = cr
+
+    @classmethod
+    def _decache(cls, cr: CardRelation):
+        del cls._instances_by_id[cr._db_id]
+
+    @classmethod
+    def _create_from_mapping(cls, m: Mapping):
+        db_id = int(m['id'])
+
+        # Avoid duplicates
+        obj = cls._instances_by_id.get(db_id)
+        if not obj:
+            card_a = Card.by_id(m['card_a_id'])
+            assert card_a
+            card_b = Card.by_id(m['card_b_id'])
+            assert card_b
+            obj = CardRelation(db_id,
+                                   card_a,
+                                   card_b,
+                                   bool(m['b_is_prereq']),
+                                   bool(m['easily_confused']),
+                                   True)
+            cls._encache(obj)
+        return obj
+    
+    @classmethod
+    def _create(cls,
+                card_a: Card,
+                card_b: Card,
+                b_is_prereq: bool,
+                easily_confused: bool) -> CardRelation:
+        if card_a.id == card_b.id or card_a == card_b:
+            raise ValueError('Invalid ids: a card cannot be related to itself')
+    
+        new_id = min(cls._instances_by_id, default=1) -1
+        if new_id > 0:
+            new_id = 0
+        
+            
+        obj = cls(new_id, card_a, card_b, b_is_prereq, easily_confused, False)
+        cls._encache(obj)
+        return obj
+
+
+    @classmethod
+    def _load_from_db(cls, con: sqla.Connection | None = None):
+        if cls._searched_db:
+            return
+
+        with maybe_connection(con) as con:
+            for row in con.execute(sqla.select(card_relation_table)).mappings():
+                if int(row['id']) in cls._instances_by_id:
+                    continue
+                _ = cls._create_from_mapping(row)
+        cls._searched_db = True
+        
+    @classmethod
+    def in_db(cls) -> list[CardRelation]:
+        cls._load_from_db()
+        return [v for k, v in cls._instances_by_id.items() if k > 0]
+
+    @classmethod
+    def not_in_db(cls) -> list[CardRelation]:
+        return [v for k, v in cls._instances_by_id.items() if k < 1]
+
+    @classmethod
+    def every(cls) -> list[CardRelation]:
+        return cls.not_in_db() + cls.in_db()
+                                   
+    @classmethod
+    def by_id(cls, id: int, con: sqla.Connection | None = None) -> CardRelation | None:
+        # If the object is already cached immediately return
+        # If the object was not cached and we have already searched return None
+        obj = cls._instances_by_id.get(id)
+        if obj:
+            return obj
+        elif cls._searched_db:
+            return
+
+        # Otherwise find this specific element and cache it
+        with maybe_connection(con) as con:
+            stmnt = sqla.select(card_relation_table).where(card_relation_table.c.id == id)
+            res = con.execute(stmnt).mappings().one_or_none()
+            if res is not None:
+                obj = cls._create_from_mapping(res)
+            
+        return obj
+
+
+
+    @classmethod
+    def by_a_id(cls, a_id: int, con: sqla.Connection | None = None) -> dict[int, CardRelation] | None:
+        d = {}
+        
+        if a_id > 0:
+            with maybe_connection(con) as con:
+                stmnt = sqla.select(card_relation_table).where(card_relation_table.c.card_a_id == a_id)
+                res = con.execute(stmnt).mappings()
+                for row in res:
+                    obj = cls._create_from_mapping(row)
+                    d[obj.id] = obj
+            cls._searched_db_a_id[a_id] = True
+
+        for r in [r for k, r in cls._instances_by_id.items() if k < 1]:
+            if r._card_a.id == a_id:
+                d[r.id] = r
+        
+        return d
+
+
+
+    @classmethod
+    def by_b_id(cls, b_id: int, con: sqla.Connection | None = None) -> dict[int, CardRelation] | None:
+        d = {}
+
+        if b_id > 0:
+            with maybe_connection(con) as con:
+                stmnt = sqla.select(card_relation_table).where(card_relation_table.c.card_b_id == b_id)
+                res = con.execute(stmnt).mappings()
+                for row in res:
+                    obj = cls._create_from_mapping(row)
+                    d[obj.id] = obj
+            cls._searched_db_b_id[b_id] = True
+
+        for r in [r for k, r in cls._instances_by_id.items() if k < 1]:
+            if r._card_b.id == b_id:
+                d[r.id] = r
+                
+        return d
+    
+
+    @classmethod
+    def specifc_relation(cls,
+                         a_id: int,
+                         b_id: int,
+                         b_is_prereq: bool | None = None,
+                         easily_confused: bool | None = None,
+                         con: sqla.Connection | None = None) -> CardRelation | None:
+        a_relations = cls.by_a_id(a_id,con=con)
+        if a_relations is None:
+            return
+        for _, v in a_relations.items():
+            if b_is_prereq is not None and easily_confused is not None:
+                if v.card_b_id == b_id\
+                   and v.b_is_prereq == b_is_prereq\
+                   and v.easily_confused == easily_confused:
+                    return v
+            elif b_is_prereq is not None:
+                if v.card_b_id == b_id and v.b_is_prereq == b_is_prereq:
+                    return v
+            elif easily_confused is not None:
+                if v.card_b_id == b_id and v.easily_confused == easily_confused:
+                    return v
+            else:
+                if v.card_b_id == b_id:
+                    return v
+                    
+            
+                        
+    # Constructor ##############################################################
+
+    def __init__(self,
+                 db_id: int,
+                 card_a: Card,
+                 card_b: Card,
+                 b_is_prereq: bool,
+                 easily_confused: bool,
+                 synced: bool):
+        self._db_id = db_id
+        self._card_a = card_a
+        self._card_b = card_b
+        self._b_is_prereq = b_is_prereq
+        self._easily_confused = easily_confused
+        self._synced = synced
+
+    # Properties ###############################################################
+
+    @property
+    def id(self) -> int:
+        return self._db_id
+
+    @property
+    def card_a_id(self) -> int:
+        return self._card_a.id
+
+    @property
+    def card_b_id(self) -> int:
+        return self._card_b.id
+
+    @property
+    def b_is_prereq(self) -> bool:
+        return self._b_is_prereq
+
+    @b_is_prereq.setter
+    def b_is_prereq(self, b: bool):
+        if b == self._b_is_prereq:
+            return
+        self._b_is_prereq = b
+        self._synced = False
+
+    @property
+    def easily_confused(self) -> bool:
+        return self._easily_confused
+
+    @easily_confused.setter
+    def easly_confused(self, b: bool):
+        if b == self._easily_confused:
+            return
+        self._easily_confused = b
+        self._synced = False
+        
+    @property
+    def synced(self) -> bool:
+        return self._synced
+
+    # Methods ##################################################################
+
+    def sync(self, con: sqla.Connection | None = None) -> int:
+        # Ignore reduntant syncs
+        if self.synced:
+            return self._db_id
+
+        with maybe_connection_commit(con) as con:
+            
+            if self._db_id > 0:
+                # These should never fail
+                assert self._card_a.id > 0
+                assert self._card_b.id > 0
+                
+                res = con.execute(
+                    sqla.update(card_relation_table)
+                    .where(card_relation_table.c.id == self._db_id)
+                    .returning(card_relation_table.c.id)
+                    .values(b_is_prereq=self._b_is_prereq,
+                            easily_confused=self._easily_confused))
+                _ = res.scalar_one()
+            else:
+                CardRelation._decache(self)
+                if self._card_a.id < 1:
+                    self._card_a._sync_only_self(con)
+                if self._card_b.id < 1:
+                    self._card_b._sync_only_self(con)
+                    
+                res = con.execute(
+                    sqla.insert(card_relation_table)
+                    .returning(card_relation_table.c.id)
+                    .values(card_a_id=self._card_a.id,
+                            card_b_id=self._card_b.id,
+                            b_is_prereq=self._b_is_prereq,
+                            easily_confused=self._easily_confused))
+                self._db_id = res.scalar_one()
+                CardRelation._encache(self)
+
+        self._synced = True
+        return self._db_id
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Card:
     # Class Variables ##########################################################
@@ -27,13 +312,13 @@ class Card:
     # Class Methods ############################################################
 
     @classmethod
-    def _add_to_cache(cls, kc: Card):
+    def _encache(cls, kc: Card):
         assert kc._db_id not in cls._id_cache
         cls._id_cache[kc._db_id] = kc
 
 
     @classmethod
-    def _remove_from_cache(cls, kc: Card):
+    def _decache(cls, kc: Card):
         del cls._id_cache[kc._db_id]
 
 
@@ -57,7 +342,7 @@ class Card:
                    due_date,
                    str(m['tags']),
                    True)
-        cls._add_to_cache(obj)
+        cls._encache(obj)
         
         return obj
     
@@ -78,10 +363,12 @@ class Card:
 
         # Find new minimum id
         new_id = min(cls._id_cache, default=1) - 1
-
+        if new_id > 0:
+            new_id = 0
+        
         # Instantiate and cache
         obj = cls(new_id, study_id, due_date_increment, due_date, tags, False)
-        cls._add_to_cache(obj)
+        cls._encache(obj)
         
         return obj
 
@@ -233,17 +520,16 @@ class Card:
                 for r
                 in rel
                 if r.b_is_prereq and r.card_a_id == self._db_id]
-    
 
     @property
     def easily_confused(self) -> list[Card]:
         rel = self.relations
         def a_if_b_b_if_a(cr: CardRelation) -> Card:
             c = None
-            if self._db_id == cr._card_a_id:
-                c = Card.by_id(cr._card_b_id)
-            elif self._db_id == cr._card_b_id:
-                c = Card.by_id(cr._card_a_id)
+            if self._db_id == cr.card_a_id:
+                c = Card.by_id(cr.card_b_id)
+            elif self._db_id == cr.card_b_id:
+                c = Card.by_id(cr.card_a_id)
             assert c
             return c
         return [a_if_b_b_if_a(r)
@@ -259,6 +545,7 @@ class Card:
     # Methods ##################################################################
 
     def add_prereq(self, c: Card) -> CardRelation:
+        assert isinstance(c, Card)
         # Check to see that this relationship already exists
         r = CardRelation.specifc_relation(self.id, c.id)
         if r is not None and r.b_is_prereq:
@@ -308,18 +595,14 @@ class Card:
             self._synced = False
 
 
-    def sync(self, con: sqla.Connection | None = None) -> int:
-        with maybe_connection_commit(con) as con2:
-            for r in self.relations:
-                if not r.synced:
-                    r.sync(con=con2)
-                    
+    def _sync_only_self(self, con: sqla.Connection | None = None) -> int:
+        with maybe_connection_commit(con) as con:
             # Ignore reduntant syncs
             if self.synced:
                 pass
             # If updating
             elif self._db_id > 0:
-                res = con2.execute(
+                res = con.execute(
                     sqla.update(card_table)\
                         .where(card_table.c.id == self._db_id)\
                         .returning(card_table.c.id)\
@@ -330,18 +613,24 @@ class Card:
                 _ = res.scalar_one()
             # If inserting
             else:
-                old_id = self._db_id
-                res = con2.execute(
+                Card._decache(self)
+                res = con.execute(
                     sqla.insert(card_table)\
                         .returning(card_table.c.id)\
-                        .values(
-                            study_id=self._study_id,
-                            due_date_increment=self._due_date_increment,
-                            due_date=self._due_date,
-                            tags=self._tags))
+                        .values(study_id=self._study_id,
+                                due_date_increment=self._due_date_increment,
+                                due_date=self._due_date,
+                                tags=self._tags))
                 self._db_id = res.scalar_one()
-                del Card._id_cache[old_id]
-                Card._id_cache[self._db_id] = self
-
+                Card._encache(self)
         self._synced = True
+        return self._db_id
+        
+
+    def sync(self, con: sqla.Connection | None = None) -> int:
+        with maybe_connection_commit(con) as con:
+            for r in self.relations:
+                if not r.synced:
+                    r.sync(con=con)
+            self._sync_only_self(con)
         return self._db_id

@@ -47,8 +47,8 @@ card_relation_table = sqla.Table(
     'card_relation',
     _metadata,
     sqla.Column('id', sqla.Integer, primary_key=True, nullable=False),
-    sqla.Column('card_a_id', sqla.Integer, sqla.ForeignKey('cards.id')),
-    sqla.Column('card_b_id', sqla.Integer, sqla.ForeignKey('cards.id')),
+    sqla.Column('card_a_id', sqla.Integer, sqla.ForeignKey('cards.id'), nullable=False),
+    sqla.Column('card_b_id', sqla.Integer, sqla.ForeignKey('cards.id'), nullable=False),
     sqla.Column('b_is_prereq', sqla.Boolean, nullable=False),
     sqla.Column('easily_confused', sqla.Boolean, nullable=False))
 

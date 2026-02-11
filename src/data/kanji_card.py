@@ -24,6 +24,7 @@ class KanjiCard:
     # Class Variables ##########################################################
 
     _id_cache: dict[int, KanjiCard] = {}
+    _card_id_cache: dict[int, KanjiCard] = {}
     _kanji_cache: dict[str, KanjiCard] = {}
     _searched_db: bool = False
 
@@ -34,6 +35,7 @@ class KanjiCard:
         assert kc._db_id not in cls._id_cache
         assert kc._kanji not in cls._kanji_cache
         cls._id_cache[kc._db_id] = kc
+        cls._card_id_cache[kc.card.id] = kc
         cls._kanji_cache[kc._kanji] = kc
 
 
@@ -41,6 +43,7 @@ class KanjiCard:
     def _remove_from_cache(cls, kc: KanjiCard):
         del cls._id_cache[kc._db_id]
         del cls._kanji_cache[kc._kanji]
+        del cls._card_id_cache[kc.card.id]
 
 
     @classmethod
@@ -82,6 +85,10 @@ class KanjiCard:
         # Check parameters
         if not is_kanji(kanji):
             raise ValueError(f'Invalid kanji: {kanji} not recognized as a kanji character')
+        if on_yomi:
+            on_yomi = on_yomi.strip()
+        if kun_yomi:
+            kun_yomi = kun_yomi.strip()
         if on_yomi == '':
             on_yomi = None
         if kun_yomi == '':
@@ -102,8 +109,8 @@ class KanjiCard:
                 if is_kana(c):
                     has_kana = True
                     break
-                if  not has_kana:
-                    raise ValueError('Invalid kun_yomi: contains no kana')
+            if  not has_kana:
+                raise ValueError('Invalid kun_yomi: contains no kana')
                 
         # Check uniqueness
         extant_card = cls.by_kanji(kanji)
@@ -132,10 +139,12 @@ class KanjiCard:
         # If set to do so generate a new relation object for every kana relationship
         if require_relationships:
             for kana_c in kana_cards:
-                c.add_prereq(kana_c)
+                c.add_prereq(kana_c.card)
         
         # Find new minimum id
         new_id = min(cls._id_cache, default=1) - 1
+        if new_id > 0:
+            new_id = 0
 
         # Instantiate and cache
         obj = KanjiCard(new_id, c, None, kanji, on_yomi, kun_yomi, meaning, False)
@@ -191,7 +200,25 @@ class KanjiCard:
                 obj = KanjiCard._create_from_mapping(res)
         return obj
 
-        
+
+    @classmethod
+    def by_card_id(cls, id:int, con: sqla.Connection | None = None) -> KanjiCard | None:
+        obj = cls._card_id_cache.get(id)
+        if obj is not None:
+            return obj
+        elif  cls._searched_db:
+            return
+
+        with maybe_connection(con) as con:
+            stmnt = sqla.select(kanji_card_table)\
+                        .where(kanji_card_table.c.card_id == id)
+            res = con.execute(stmnt)\
+                     .mappings()\
+                     .one_or_none()
+            if res is not None:
+                obj = KanjiCard._create_from_mapping(res)
+        return obj
+    
     @classmethod
     def by_kanji(cls, kanji: str, con: sqla.Connection | None = None) -> KanjiCard | None:
         # Check cache

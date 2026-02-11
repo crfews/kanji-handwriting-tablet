@@ -1,10 +1,11 @@
-from .card import Card
+from .card import Card, CardRelation
 from .kana_card import KanaCard
 from .kanji_card import KanjiCard
 from .phrase_card import PhraseCard
 from .drawing import Drawing
-from .card_relation import CardRelation
 from .database import maybe_connection, maybe_connection_commit
+from .derive_card import derive_card_type
+
 __all__ = [
     "Card",
     "KanaCard",
@@ -13,5 +14,6 @@ __all__ = [
     "Drawing",
     "CardRelation",
     "maybe_connection",
-    "maybe_connection_commit"
+    "maybe_connection_commit",
+    'derive_card_type'
 ]
