@@ -161,7 +161,7 @@ class KanaCard:
                      .mappings()\
                      .one_or_none()
             if res is not None:
-                obj = KanaCard._create_from_mapping(res)
+                obj = cls._create_from_mapping(res)
         return obj
     
 

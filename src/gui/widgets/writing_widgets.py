@@ -106,11 +106,8 @@ class DrawingSurface(QWidget):
 
 
 class CharacterDrawing(QWidget):
-
-    drawing_surface: DrawingSurface = None
-
-    cleared = pyqtSignal()
-    submitted = pyqtSignal(list) 
+    cleared = pyqtSignal()       # must be class attribute
+    submitted = pyqtSignal(list) # must be class attribute
     
     def __init__(self,
                  parent = None,

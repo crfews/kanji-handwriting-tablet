@@ -1,6 +1,6 @@
 # Author: Phillip Graham
 # Description: Defines a class used to wrap the card table in the database
-# Last Modified: Wed. Feb. 02, 2026
+# Last Modified: Tue. Feb. 10, 2026
  
 
 ################################################################################
@@ -216,9 +216,17 @@ class CardRelation:
         return self._card_a.id
 
     @property
+    def card_a(self) -> Card:
+        return self._card_a
+    
+    @property
     def card_b_id(self) -> int:
         return self._card_b.id
 
+    @property
+    def card_b(self) -> Card:
+        return self._card_b
+    
     @property
     def b_is_prereq(self) -> bool:
         return self._b_is_prereq
