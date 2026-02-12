@@ -25,11 +25,12 @@ class DrawingSurface(QWidget):
         QColor("#9e9ac8"), QColor("#bdbdbd"),
         QColor("#b5cf6b"), QColor("#17becf")])
     
-    strokes = []
-    current_stroke = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
+                
+        self.strokes = []
+        self.current_stroke = None
 
         self.pen = QPen(
             Qt.GlobalColor.black,
