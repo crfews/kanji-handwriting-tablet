@@ -11,7 +11,13 @@ from __future__ import annotations
 from typing import Mapping
 import sqlalchemy as sqla
 from datetime import date
-from .database import card_table, card_relation_table, maybe_connection, maybe_connection_commit
+from .database import (card_table,
+                       card_relation_table,
+                       maybe_connection,
+                       maybe_connection_commit,
+                       KANA_CARD_KIND,
+                       KANJI_CARD_KIND,
+                       PHRASE_CARD_KIND)
 
 ################################################################################
 # Class Definition
@@ -346,6 +352,7 @@ class Card:
         # Instantiate and cache
         obj = Card(db_id,
                    int(m['study_id']),
+                   str(m['kind']),
                    int(m['due_date_increment']),
                    due_date,
                    str(m['tags']),
@@ -357,11 +364,14 @@ class Card:
 
     @classmethod
     def _create(cls,
-               study_id: int | None = None,
-               due_date_increment: int | None = None,
-               due_date: date | None = None,
-               tags: str | None = None) -> Card:
+                kind: str,
+                study_id: int | None = None,
+                due_date_increment: int | None = None,
+                due_date: date | None = None,
+                tags: str | None = None) -> Card:
         # Check parameters
+        if kind != KANA_CARD_KIND and kind != KANJI_CARD_KIND and kind != PHRASE_CARD_KIND:
+            raise ValueError(f"Invalid kind argument '{kind}': must be {KANA_CARD_KIND}, {KANJI_CARD_KIND}, or {PHRASE_CARD_KIND}")
         if study_id is None:
             study_id = -1
         if due_date_increment is None:
@@ -375,7 +385,7 @@ class Card:
             new_id = 0
         
         # Instantiate and cache
-        obj = cls(new_id, study_id, due_date_increment, due_date, tags, False)
+        obj = cls(new_id, study_id, kind, due_date_increment, due_date, tags, False)
         cls._encache(obj)
         
         return obj
@@ -431,12 +441,14 @@ class Card:
     def __init__(self,
                  db_id: int,
                  study_id: int,
+                 kind: str,
                  due_date_increment: int,
                  due_date: date,
                  tags: str | None,
                  synced: bool):
         self._db_id = db_id
         self._study_id = study_id
+        self._kind = kind
         self._due_date_increment = due_date_increment
         self._due_date = due_date
         self._tags = tags
@@ -453,7 +465,10 @@ class Card:
     def study_id(self) -> int:
         return self._study_id
 
-
+    @property
+    def kind(self) -> str:
+        return self._kind
+    
     @study_id.setter
     def study_id(self, id: int):
         if id == self._study_id:
@@ -626,6 +641,7 @@ class Card:
                     sqla.insert(card_table)\
                         .returning(card_table.c.id)\
                         .values(study_id=self._study_id,
+                                kind=self._kind,
                                 due_date_increment=self._due_date_increment,
                                 due_date=self._due_date,
                                 tags=self._tags))

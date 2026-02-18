@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Mapping
 import sqlalchemy as sqla
-from .database import phrase_card_table, maybe_connection, maybe_connection_commit
+from .database import phrase_card_table, maybe_connection, maybe_connection_commit, PHRASE_CARD_KIND
 from .card import Card
 from .helpers import is_kana, is_kanji
 from .kana_card import KanaCard
@@ -135,7 +135,7 @@ class PhraseCard:
                     
             
         # Create new card object
-        c = Card._create()
+        c = Card._create(kind=PHRASE_CARD_KIND)
 
         # Generate a new relation object for every relationship
         if require_relationship:

@@ -9,6 +9,8 @@ from gui.pages.home_page import HomePage
 from gui.pages.import_page import ImportPage
 from gui.pages.learn_kana_page import LearnKanaWidget
 from gui.pages.learn_kanji_page import LearnKanjiWidget
+from gui.pages.review_scheduler import ReviewScheduler
+
 class MainWindow(QMainWindow):
     """The class acting as the root widget for the whole application"""
 
@@ -57,6 +59,7 @@ class MainWindow(QMainWindow):
         self.import_page = ImportPage(self)
         self.learn_kana_page = LearnKanaWidget(self)
         self.learn_kanji_page = LearnKanjiWidget(self)
+        self.review_scheduler = ReviewScheduler(self)
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
@@ -68,6 +71,8 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.qna_page)
         self.stack.addWidget(self.learn_kana_page)
         self.stack.addWidget(self.learn_kanji_page)
+        self.stack.addWidget(self.review_scheduler)
+        
         # Start on home
         self.stack.setCurrentWidget(self.home_page)
 
@@ -83,6 +88,7 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('QNA', self.qna_page)
         self.add_page_to_menu('Learn Kana', self.learn_kana_page)
         self.add_page_to_menu('Learn Kanji', self.learn_kanji_page)
+        self.add_page_to_menu('Review Scheduler', self.review_scheduler)
 
 
     

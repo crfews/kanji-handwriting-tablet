@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Mapping
 import sqlalchemy as sqla
-from .database import kana_card_table, maybe_connection, maybe_connection_commit
+from .database import kana_card_table, maybe_connection, maybe_connection_commit, KANA_CARD_KIND
 from .card import Card
 from .drawing import Drawing
 from .helpers import is_kana
@@ -85,7 +85,7 @@ class KanaCard:
             raise ValueError('Invalid kana: not unique')
 
         # Create new card object
-        c = Card._create()
+        c = Card._create(kind=KANA_CARD_KIND)
 
         # Find new minimum id
         new_id = min(cls._db_id_cache, default=1) - 1

@@ -16,6 +16,14 @@ from sqlalchemy import event
 from contextlib import contextmanager
 
 ################################################################################
+# Globals
+################################################################################
+
+KANA_CARD_KIND = 'kana'
+KANJI_CARD_KIND = 'kanji'
+PHRASE_CARD_KIND = 'phrase'
+
+################################################################################
 # Database Objects
 ################################################################################
 
@@ -43,6 +51,7 @@ card_table = sqla.Table(
     sqla.Column("due_date_increment", sqla.Integer, nullable=False),
     sqla.Column('due_date', sqla.Date, nullable=False),
     sqla.Column('tags', sqla.String, nullable=True),
+    sqla.Column('kind', sqla.String, nullable=True),
     sqla.Index('ix_cards_study_id', 'study_id'))
 
 card_relation_table = sqla.Table(

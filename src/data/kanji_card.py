@@ -11,7 +11,7 @@ from typing import Mapping
 import sqlalchemy as sqla
 
 from data.kana_card import KanaCard
-from .database import kanji_card_table, maybe_connection, maybe_connection_commit
+from .database import kanji_card_table, maybe_connection, maybe_connection_commit, KANJI_CARD_KIND
 from .card import Card
 from .drawing import Drawing
 from .helpers import is_kanji, is_kana
@@ -134,7 +134,7 @@ class KanjiCard:
                 kana_cards.append(kana_c)
         
         # Create new card object
-        c = Card._create()
+        c = Card._create(kind=KANJI_CARD_KIND)
 
         # If set to do so generate a new relation object for every kana relationship
         if require_relationships:
