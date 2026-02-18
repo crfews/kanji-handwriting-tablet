@@ -149,10 +149,3 @@ class ReviewScheduler(QWidget):
         self.kana_label.setText(getattr(self._current, "kana", "") or "")
         self.romaji_label.setText(getattr(self._current, "romaji", "") or "")
         self.status_label.setText("Click Option")
-
-
-
-
-# doesnt move past first iteration I think.
-# Gets a stopIteration atfter about 4/5 runs through program
-# needs to move onto next card after changing due_dates
