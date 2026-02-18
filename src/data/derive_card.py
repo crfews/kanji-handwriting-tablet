@@ -1,4 +1,4 @@
-from database import KANJI_CARD_KIND, KANA_CARD_KIND, PHRASE_CARD_KIND
+from .database import KANJI_CARD_KIND, KANA_CARD_KIND, PHRASE_CARD_KIND
 from .card import Card
 from .kana_card import KanaCard
 from .kanji_card import KanjiCard
