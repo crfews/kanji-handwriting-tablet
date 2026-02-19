@@ -34,7 +34,7 @@ def _chunk_line(line: list[float], chunk_count: int) -> NDArray[np.float32]:
     out = np.empty(2 * chunk_count, dtype=np.float32)
     out[0::2] = x_means
     out[1::2] = y_means
-    return out.tolist()
+    return out
 
 
 def _process_strokes(strokes: list[list[float]], chunk_count: int):

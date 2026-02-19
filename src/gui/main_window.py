@@ -60,9 +60,9 @@ class MainWindow(QMainWindow):
         self.learn_kana_page = LearnKanaWidget(self)
         self.learn_kanji_page = LearnKanjiWidget(self)
         self.review_scheduler = ReviewScheduler(self)
+        
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
-
         self.stack.addWidget(self.import_page)
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.handwriting_page)
