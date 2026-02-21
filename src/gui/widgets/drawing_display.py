@@ -112,7 +112,7 @@ class DrawingDisplay(QWidget):
         self._image = new_img
 
         # Re-map strokes to new size then redraw
-        if self._raw_strokes:
+        if self._raw_strokes is not None:
             self.set_strokes(self._raw_strokes)
             self.set_strokes(self._raw_strokes)
             self.restart()
