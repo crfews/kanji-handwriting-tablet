@@ -69,8 +69,8 @@ def compare_drawings(
 def bin_drawing_respose(
     drawing1: list[list[float]],
     drawing2: list[list[float]],
-    good_ok_threshold=0.02,
-    ok_bad_threshold=0.06) -> int:
+    good_ok_threshold=0.03,
+    ok_bad_threshold=0.08) -> int:
 
     assert good_ok_threshold < ok_bad_threshold
     procrustes_grade = compare_drawings(drawing1, drawing2)
