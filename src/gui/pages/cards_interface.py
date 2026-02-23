@@ -1,11 +1,23 @@
 import os
 from PyQt6 import uic
 from PyQt6.QtWidgets import QWidget, QLineEdit, QRadioButton, QPushButton
+from data import *
 
 
 class CardsInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # configure card dictionary structure (intermediary before placing in db)
+        self.__init_card_config_dict__ = {'answer':None,
+                            'character':None,
+                            'info':{'kana':None,
+                                    'meaning':None,
+                                    'related':None,
+                                    'romaji':None},
+                            'type':-1,
+                            'related':None}
+        self.card_config = self.__init_card_config_dict__
 
         # Load the ui
         self.answer_lineEdit: QLineEdit
@@ -53,13 +65,14 @@ class CardsInterface(QWidget):
 
         # Default set the character radio button
         self.kana_radioButton.setChecked(True)
-        self.on_kana_radio_clicked()
+
+
 
     # TODO: adjust these limits, they are arbitrarily chosen, and discuss radio button meaning
     def on_kana_radio_clicked(self) -> None:
         self.answer_lineEdit.setMaxLength(1)
-        # self.kana_lineEdit.clear();
-        # self.kana_lineEdit.setMaxLength(0)
+        self.kana_lineEdit.clear();
+        self.kana_lineEdit.setMaxLength(1)
         self.card_config['type'] = 0
         print('character radio clicked')
 
@@ -75,7 +88,7 @@ class CardsInterface(QWidget):
 
     # TODO: update search terms
     def on_search_editing_finished(self) -> None:
-        print(f'search field now has {self.search_lineEdit.text()}')
+        print(f'search field now has text')
 
     #TODO: update answer, kana, romaji, fields of card based on input
     def on_answer_editing_finished(self) -> None:
@@ -100,6 +113,19 @@ class CardsInterface(QWidget):
 
     def on_save_pushbutton_clicked(self) -> None:
         #TODO: add entry to database, autofill card entry fields
+        if self.card_config['type'] != -1:
+            if self.card_config['type'] == 0: # create kana card using fields
+                KanaCard.create(kana=self.card_config['info']['kana'],romaji=self.card_config['info']['romaji'])
+                print('kana card created')
+            if self.card_config['type'] == 1: # create kanji card using fields
+                KanjiCard.create(kanji=self.card_config['info']['kanji'],meaning=self.card_config['info']['meaning'])
+                print('kanji card created')
+            if self.card_config['type'] == 2: # create phrase card using fields
+                PhraseCard.create(kanji_phrase=self.card_config['info']['kanji'],kana_phrase=self.card_config['info']['kana'], meaning=self.card_config['info']['meaning'])
+                print('phrase card created')
+            self.card_config = self.__init_card_config_dict__
+        else:
+            print(f'cannot save - card type not set')
         print('save clicked')
 
     def on_delete_pushbutton_clicked(self) -> None:
