@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 from itertools import cycle
 from PyQt6.QtCore import pyqtSignal, pyqtSlot, Qt, QPoint, QRect
-from PyQt6.QtGui import QPainter, QPen, QImage, QColor
+from PyQt6.QtGui import QPainter, QPen, QImage, QColor, QMouseEvent, QPaintEvent
 from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
 
 
@@ -25,11 +25,12 @@ class DrawingSurface(QWidget):
         QColor("#9e9ac8"), QColor("#bdbdbd"),
         QColor("#b5cf6b"), QColor("#17becf")])
     
-    strokes = []
-    current_stroke = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
+                
+        self.strokes = []
+        self.current_stroke = None
 
         self.pen = QPen(
             Qt.GlobalColor.black,
@@ -50,21 +51,27 @@ class DrawingSurface(QWidget):
         from PyQt6.QtCore import QSize
         return QSize(self.image.width(), self.image.height())
 
-    def paintEvent(self, ev):
+    def paintEvent(self, a0: Optional[QPaintEvent]):
+        _ = a0
         p = QPainter(self)                     # paint widget from backing image
         p.drawImage(0, 0, self.image)
 
     
     # --- Mouse handling: draw onto the QImage ---
-    def mousePressEvent(self, e):
-        if e.button() == Qt.MouseButton.LeftButton:
+
+    def mousePressEvent(self, a0: Optional[QMouseEvent]):
+        if not a0:
+            return
+        if a0.button() == Qt.MouseButton.LeftButton:
             self.pen.setColor(next(self.pen_colors))
             self.is_drawing = True
-            self.last_point = e.position().toPoint()
+            self.last_point = a0.position().toPoint()
 
-    def mouseMoveEvent(self, e):
-        if self.is_drawing and (e.buttons() & Qt.MouseButton.LeftButton):
-            cur = e.position().toPoint()       # QPoint (ints)
+    def mouseMoveEvent(self, a0):
+        if not a0:
+            return
+        if self.is_drawing and (a0.buttons() & Qt.MouseButton.LeftButton):
+            cur = a0.position().toPoint()       # QPoint (ints)
             p = QPainter(self.image)
 
             if self.current_stroke is None:
@@ -72,25 +79,28 @@ class DrawingSurface(QWidget):
             self.current_stroke.append(cur.x())
             self.current_stroke.append(cur.y())
 
-            try:
-                p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-                p.setPen(self.pen)
-                p.drawLine(self.last_point, cur) # QPoint,QPoint overload (safe)
-            finally:
-                p.end()
-
-            # minimal repaint
-            dirty = QRect(self.last_point, cur).normalized().adjusted(-4, -4, 4, 4)
-            self.update(dirty)
+            if self.last_point is not None:
+                try:
+                    p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+                    p.setPen(self.pen)
+                    p.drawLine(self.last_point, cur) # QPoint,QPoint overload (safe)
+                finally:
+                    p.end()
+                # minimal repaint
+                dirty = QRect(self.last_point, cur).normalized().adjusted(-4, -4, 4, 4)
+                self.update(dirty)
             self.last_point = cur
 
-    def mouseReleaseEvent(self, e):
+    def mouseReleaseEvent(self, a0: Optional[QMouseEvent]):
+        if not a0:
+            return
+        
         self.strokes.append(self.current_stroke)
         self.current_stroke = None
 
         print(self.strokes)
 
-        if e.button() == Qt.MouseButton.LeftButton:
+        if a0.button() == Qt.MouseButton.LeftButton:
             self.is_drawing = False
             self.last_point = None
 
@@ -105,12 +115,11 @@ class DrawingSurface(QWidget):
         self.update()
 
 
+
+
 class CharacterDrawing(QWidget):
-
-    drawing_surface: DrawingSurface = None
-
-    cleared = pyqtSignal()
-    submitted = pyqtSignal(list) 
+    cleared = pyqtSignal()       # must be class attribute
+    submitted = pyqtSignal(list) # must be class attribute
     
     def __init__(self,
                  parent = None,

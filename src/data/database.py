@@ -1,7 +1,7 @@
 # Author: Phillip Graham
 # Description: Defines a database using sqlite containing tables for cards,
 #     kana, kanji, phrases
-# Last Modified: Sun. Feb. 08, 2026
+# Last Modified: Wed. Feb. 11, 2026
 
 
 ################################################################################
@@ -14,6 +14,14 @@ import os
 import sqlalchemy as sqla
 from sqlalchemy import event
 from contextlib import contextmanager
+
+################################################################################
+# Globals
+################################################################################
+
+KANA_CARD_KIND = 'kana'
+KANJI_CARD_KIND = 'kanji'
+PHRASE_CARD_KIND = 'phrase'
 
 ################################################################################
 # Database Objects
@@ -32,7 +40,8 @@ drawing_table = sqla.Table(
     _metadata,
     sqla.Column('id', sqla.Integer, primary_key=True, nullable=False),
     sqla.Column('stroke_count', sqla.Integer, unique=False, nullable=False),
-    sqla.Column('strokes', sqla.PickleType, unique=False, nullable=False))
+    sqla.Column('strokes', sqla.PickleType, unique=False, nullable=False),
+    sqla.Index('ix_drawings_stroke_count', 'stroke_count'))
 
 card_table = sqla.Table(
     'cards',
@@ -41,16 +50,20 @@ card_table = sqla.Table(
     sqla.Column('study_id', sqla.Integer, unique=False),
     sqla.Column("due_date_increment", sqla.Integer, nullable=False),
     sqla.Column('due_date', sqla.Date, nullable=False),
-    sqla.Column('tags', sqla.String, nullable=True))
+    sqla.Column('tags', sqla.String, nullable=True),
+    sqla.Column('kind', sqla.String, nullable=True),
+    sqla.Index('ix_cards_study_id', 'study_id'))
 
 card_relation_table = sqla.Table(
     'card_relation',
     _metadata,
     sqla.Column('id', sqla.Integer, primary_key=True, nullable=False),
-    sqla.Column('card_a_id', sqla.Integer, sqla.ForeignKey('cards.id')),
-    sqla.Column('card_b_id', sqla.Integer, sqla.ForeignKey('cards.id')),
+    sqla.Column('card_a_id', sqla.Integer, sqla.ForeignKey('cards.id'), nullable=False),
+    sqla.Column('card_b_id', sqla.Integer, sqla.ForeignKey('cards.id'), nullable=False),
     sqla.Column('b_is_prereq', sqla.Boolean, nullable=False),
-    sqla.Column('easily_confused', sqla.Boolean, nullable=False))
+    sqla.Column('easily_confused', sqla.Boolean, nullable=False),
+    sqla.Index("ix_card_rel_a", "card_a_id"),
+    sqla.Index("ix_card_rel_b", "card_b_id"),)
 
 kana_card_table = sqla.Table(
     'kana_cards',
@@ -59,7 +72,8 @@ kana_card_table = sqla.Table(
     sqla.Column('card_id', sqla.Integer, sqla.ForeignKey('cards.id'), unique=True, nullable=False),
     sqla.Column('drawing_id', sqla.Integer, sqla.ForeignKey('drawings.id'), nullable=True),
     sqla.Column('kana', sqla.String, unique=True, nullable=False),
-    sqla.Column('romaji', sqla.String, unique=False, nullable=True))
+    sqla.Column('romaji', sqla.String, unique=False, nullable=True),
+    sqla.Index('ix_kana_cards_card_id', 'card_id'))
 
 kanji_card_table = sqla.Table(
     'kanji_cards',
@@ -70,7 +84,8 @@ kanji_card_table = sqla.Table(
     sqla.Column('kanji', sqla.String, unique=True, nullable=False),
     sqla.Column('on_yomi', sqla.String, unique=False, nullable=True),
     sqla.Column('kun_yomi', sqla.String, unique=False, nullable=True),
-    sqla.Column('meaning', sqla.String, unique=False, nullable=True))
+    sqla.Column('meaning', sqla.String, unique=False, nullable=True),
+    sqla.Index('ix_kanji_cards_card_id', 'card_id'))
 
 phrase_card_table = sqla.Table(
     'phrase_cards',
@@ -80,7 +95,8 @@ phrase_card_table = sqla.Table(
     sqla.Column('kanji_phrase', sqla.String, nullable=True),
     sqla.Column('kana_phrase', sqla.String, nullable=True),
     sqla.Column('meaning', sqla.String, nullable=False),
-    sqla.Column('grammar', sqla.String, nullable=True))
+    sqla.Column('grammar', sqla.String, nullable=True),
+    sqla.Index('ix_phrase_cards_card_id', 'card_id'))
 
 # Construct the database
 _metadata.create_all(_engine)

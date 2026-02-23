@@ -52,7 +52,7 @@ class HomePage(QWidget):
         # Buttons - store as instance variables for connection in MainWindow
         self.btn_handwriting = QPushButton("Handwriting Manager")
         self.btn_cards = QPushButton("Cards Interface")
-        self.btn_type = QPushButton("Cards Type Manager")
+        # self.btn_type = QPushButton("Cards Type Manager")
         self.btn_review = QPushButton("Review")
         self.btn_qna = QPushButton("QNA")
 
@@ -61,7 +61,7 @@ class HomePage(QWidget):
         layout.addWidget(horizontal_buttons_widget)
         layout.addWidget(self.btn_handwriting)
         layout.addWidget(self.btn_cards)
-        layout.addWidget(self.btn_type)
+        # layout.addWidget(self.btn_type)
         layout.addWidget(self.btn_review)
         layout.addWidget(self.btn_qna)
 

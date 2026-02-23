@@ -58,6 +58,8 @@ class Drawing:
     @classmethod
     def create(cls, strokes: list[list[float]]) -> Drawing:
         new_id = min(cls._id_cache, default=1) - 1
+        if new_id > 0:
+            new_id = 0
         stroke_count = len(strokes)
         obj = Drawing(new_id, stroke_count, strokes, False)
         cls._add_to_cache(obj)

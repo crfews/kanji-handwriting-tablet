@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Mapping
 import sqlalchemy as sqla
-from .database import kana_card_table, maybe_connection, maybe_connection_commit
+from .database import kana_card_table, maybe_connection, maybe_connection_commit, KANA_CARD_KIND
 from .card import Card
 from .drawing import Drawing
 from .helpers import is_kana
@@ -34,13 +34,13 @@ class KanaCard:
         assert kc.card.id not in cls._card_id_cache
         assert kc._kana not in cls._kana_cache
         cls._db_id_cache[kc._db_id] = kc
-        cls._card_id_cache[kc._card._db_id] = kc
+        cls._card_id_cache[kc.card.id] = kc
         cls._kana_cache[kc._kana] = kc
 
     @classmethod
     def _remove_from_cache(cls, kc: KanaCard):
         del cls._db_id_cache[kc._db_id]
-        del cls._card_id_cache[kc._card._db_id]
+        del cls._card_id_cache[kc.card.id]
         del cls._kana_cache[kc._kana]
 
     @classmethod
@@ -85,11 +85,13 @@ class KanaCard:
             raise ValueError('Invalid kana: not unique')
 
         # Create new card object
-        c = Card._create()
+        c = Card._create(kind=KANA_CARD_KIND)
 
         # Find new minimum id
         new_id = min(cls._db_id_cache, default=1) - 1
-
+        if new_id > 0:
+            new_id = 0
+        
         # Instantiate and cache
         obj = KanaCard(new_id, c, None, kana, romaji, False)
         cls._add_to_cache(obj)
@@ -144,7 +146,26 @@ class KanaCard:
         
         return obj
 
-        
+    @classmethod
+    def by_card_id(cls, id:int, con: sqla.Connection | None = None) -> KanaCard | None:
+        obj = cls._card_id_cache.get(id)
+        if obj is not None:
+            return obj
+        elif  cls._searched_db:
+            return
+
+        with maybe_connection(con) as con:
+            stmnt = sqla.select(kana_card_table)\
+                        .where(kana_card_table.c.card_id == id)
+            res = con.execute(stmnt)\
+                     .mappings()\
+                     .one_or_none()
+            if res is not None:
+                obj = cls._create_from_mapping(res)
+        return obj
+    
+
+
     @classmethod
     def by_kana(cls, kana: str, con: sqla.Connection | None = None) -> KanaCard | None:
         obj = cls._kana_cache.get(kana)

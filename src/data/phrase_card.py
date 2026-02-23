@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Mapping
 import sqlalchemy as sqla
-from .database import phrase_card_table, maybe_connection, maybe_connection_commit
+from .database import phrase_card_table, maybe_connection, maybe_connection_commit, PHRASE_CARD_KIND
 from .card import Card
 from .helpers import is_kana, is_kanji
 from .kana_card import KanaCard
@@ -23,6 +23,7 @@ class PhraseCard:
     # Class Variables ##########################################################
 
     _id_cache: dict[int, PhraseCard] = {}
+    _card_id_cache: dict[int, PhraseCard] = {}
     _searched_db: bool = False
 
     # Class Methods ############################################################
@@ -30,11 +31,14 @@ class PhraseCard:
     @classmethod
     def _add_to_cache(cls, pc: PhraseCard):
         assert pc._db_id not in cls._id_cache
+        assert pc.card.id not in cls._card_id_cache
         cls._id_cache[pc._db_id] = pc
+        cls._card_id_cache[pc.card.id] = pc
 
     @classmethod
     def _remove_from_cache(cls, pc: PhraseCard):
         del cls._id_cache[pc._db_id]
+        del cls._card_id_cache[pc.card.id]
 
 
     @classmethod
@@ -131,7 +135,7 @@ class PhraseCard:
                     
             
         # Create new card object
-        c = Card._create()
+        c = Card._create(kind=PHRASE_CARD_KIND)
 
         # Generate a new relation object for every relationship
         if require_relationship:
@@ -140,7 +144,9 @@ class PhraseCard:
 
         # Find new minimum id
         new_id = min(cls._id_cache, default=1) - 1
-
+        if new_id > 0:
+            new_id = 0
+        
         #Instantiate and cache
         obj = PhraseCard(new_id, c, kanji_phrase, kana_phrase, meaning, grammar, False)
         cls._add_to_cache(obj)
@@ -195,7 +201,25 @@ class PhraseCard:
         
         return obj
 
+    @classmethod
+    def by_card_id(cls, id:int, con: sqla.Connection | None = None) -> PhraseCard | None:
+        obj = cls._card_id_cache.get(id)
+        if obj is not None:
+            return obj
+        elif  cls._searched_db:
+            return
 
+        with maybe_connection(con) as con:
+            stmnt = sqla.select(phrase_card_table)\
+                        .where(phrase_card_table.c.card_id == id)
+            res = con.execute(stmnt)\
+                     .mappings()\
+                     .one_or_none()
+            if res is not None:
+                obj = PhraseCard._create_from_mapping(res)
+        return obj
+
+    
     # Constructor ##############################################################
 
     def __init__(self,

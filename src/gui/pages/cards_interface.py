@@ -4,36 +4,20 @@ from PyQt6.QtWidgets import QWidget, QLineEdit, QRadioButton, QPushButton
 
 
 class CardsInterface(QWidget):
-
-    answer_lineEdit: QLineEdit = None
-    kana_lineEdit: QLineEdit = None
-    romaji_lineEdit: QLineEdit = None
-    search_lineEdit: QLineEdit = None
-    meaning_lineEdit: QLineEdit = None
-    related_lineEdit: QLineEdit = None
-
-    kana_radioButton: QRadioButton = None
-    kanji_radioButton: QRadioButton = None
-    phrase_radioButton: QRadioButton = None
-
-    save_pushButton: QPushButton = None
-    delete_pushButton: QPushButton = None
-    search_pushButton: QPushButton = None
-
-    card_config = {'type':'', # 0 for kana, 1 for kanji/word, 2 for phrase
-                   'answer':'',
-                   'study_id':-1,
-                   'info':{}, # kana, romaji, meaning, related str:str dictionary
-                   'related':'',
-                   'highest':''
-                   }
-    
     def __init__(self, parent=None):
         super().__init__(parent)
 
         # Load the ui
+        self.answer_lineEdit: QLineEdit
+        self.kana_lineEdit: QLineEdit
+        self.romaji_lineEdit: QLineEdit
+        self.character_radioButton: QRadioButton
+        self.word_radioButton: QRadioButton
+        self.phrase_radioButton: QRadioButton
+        self.save_pushButton: QPushButton | None = None
         ui_file_path = os.path.abspath(__file__).replace('.py', '.ui')
-        uic.loadUi(ui_file_path, self)
+        
+        uic.loadUi(ui_file_path, self) # pyright: ignore[reportPrivateImportUsage]
 
         # Verify the ui elements were correctly named
         assert self.answer_lineEdit is not None
