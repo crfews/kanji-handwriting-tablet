@@ -1,11 +1,23 @@
 import os
 from PyQt6 import uic
-from PyQt6.QtWidgets import QWidget, QLineEdit, QRadioButton, QPushButton
+from PyQt6.QtWidgets import QWidget, QLineEdit, QRadioButton, QPushButton, QListWidget, QListWidgetItem
+from data import *
 
 
 class CardsInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # configure card dictionary structure (intermediary before placing in db)
+        self.__init_card_config_dict__ = {'answer':None,
+                            'character':None,
+                            'info':{'kana':None,
+                                    'meaning':None,
+                                    'related':None,
+                                    'romaji':None},
+                            'type':-1,
+                            'related':None}
+        self.card_config = self.__init_card_config_dict__
 
         # Load the ui
         self.answer_lineEdit: QLineEdit
@@ -14,28 +26,121 @@ class CardsInterface(QWidget):
         self.character_radioButton: QRadioButton
         self.word_radioButton: QRadioButton
         self.phrase_radioButton: QRadioButton
+        self.cards_listWidget: QListWidget
         self.save_pushButton: QPushButton | None = None
         ui_file_path = os.path.abspath(__file__).replace('.py', '.ui')
-        
+        self.search_cards = None
+        with maybe_connection(None) as con:
+            self.all_kana_cards = list(query_learnable_kana_cards(con)) + list(query_reviewable_kana_card(con))
+            self.all_kanji_cards = list(query_learnable_kanji_cards(con)) + list(query_reviewable_kanji_cards(con))
+            self.all_phrase_cards = list(query_learnable_phrase_cards(con)) + list(query_reviewable_phrase_cards(con))
         uic.loadUi(ui_file_path, self) # pyright: ignore[reportPrivateImportUsage]
+        self.cards_listWidget.addItems(card.kana for card in self.all_kana_cards)
+        self.cards_listWidget.addItems(card.kanji for card in self.all_kanji_cards)
+        self.cards_listWidget.addItems(card.kanji_phrase for card in self.all_phrase_cards)
 
         # Verify the ui elements were correctly named
         assert self.answer_lineEdit is not None
         assert self.kana_lineEdit is not None
         assert self.romaji_lineEdit is not None
-        assert self.character_radioButton is not None
-        assert self.word_radioButton is not None
-        assert self.phrase_radioButton is not None
-        assert self.save_pushButton is not None
+        assert self.search_lineEdit is not None
+        assert self.meaning_lineEdit is not None
+        assert self.related_lineEdit is not None
 
-        self.character_radioButton.clicked.connect(self.on_character_radio_clicked)
+        assert self.kana_radioButton is not None
+        assert self.kanji_radioButton is not None
+        assert self.phrase_radioButton is not None
+
+        assert self.save_pushButton is not None
+        assert self.delete_pushButton is not None
+        assert self.search_pushButton is not None
+
+        # Connecting response functions to UI interactions
+        self.kana_radioButton.clicked.connect(self.on_kana_radio_clicked)
+        self.kanji_radioButton.clicked.connect(self.on_kanji_radio_clicked)
+        self.phrase_radioButton.clicked.connect(self.on_phrase_radio_clicked)
+
+        self.search_lineEdit.editingFinished.connect(self.on_search_editing_finished)
+        self.answer_lineEdit.editingFinished.connect(self.on_answer_editing_finished)
+        self.kana_lineEdit.editingFinished.connect(self.on_kana_editing_finished)
+        self.romaji_lineEdit.editingFinished.connect(self.on_romaji_editing_finished)
+        self.related_lineEdit.editingFinished.connect(self.on_related_editing_finished)
+        self.meaning_lineEdit.editingFinished.connect(self.on_meaning_editing_finished)
+
+        self.save_pushButton.clicked.connect(self.on_save_pushbutton_clicked)
+        self.delete_pushButton.clicked.connect(self.on_delete_pushbutton_clicked)
+        self.search_pushButton.clicked.connect(self.on_search_pushbutton_clicked)
 
         # Default set the character radio button
-        self.character_radioButton.setChecked(True)
-        self.on_character_radio_clicked()
+        self.kana_radioButton.setChecked(True)
 
-    def on_character_radio_clicked(self) -> None:
+
+
+    # TODO: adjust these limits, they are arbitrarily chosen, and discuss radio button meaning
+    def on_kana_radio_clicked(self) -> None:
         self.answer_lineEdit.setMaxLength(1)
+        self.kana_lineEdit.clear();
+        self.kana_lineEdit.setMaxLength(1)
+        self.card_config['type'] = 0
         print('character radio clicked')
-        pass
+
+    def on_kanji_radio_clicked(self) -> None:
+        self.answer_lineEdit.setMaxLength(5)
+        self.card_config['type'] = 1
+        print('word radio clicked')
+    
+    def on_phrase_radio_clicked(self) -> None:
+        self.answer_lineEdit.setMaxLength(18)
+        self.card_config['type'] = 2
+        print('phrase radio clicked')
+
+    # TODO: update search terms
+    def on_search_editing_finished(self) -> None:
+        print(f'search field now has text')
+
+    #TODO: update answer, kana, romaji, fields of card based on input
+    def on_answer_editing_finished(self) -> None:
+        self.card_config['answer'] = self.answer_lineEdit.text()
+        print('answer edited')
+
+    def on_kana_editing_finished(self) -> None:
+        self.card_config['info']['kana'] = self.kana_lineEdit.text()
+        print('kana edited')
+
+    def on_romaji_editing_finished(self) -> None:
+        self.card_config['info']['romaji'] = self.romaji_lineEdit.text()
+        print('romaji edited')
+
+    def on_meaning_editing_finished(self) -> None:
+        self.card_config['info']['meaning'] = self.meaning_lineEdit.text()
+        print('meaning edited')
+
+    def on_related_editing_finished(self) -> None:
+        self.card_config['info']['related'] = self.related_lineEdit.text()
+        print('related info finished')
+
+    def on_save_pushbutton_clicked(self) -> None:
+        #TODO: add entry to database, autofill card entry fields
+        if self.card_config['type'] != -1:
+            if self.card_config['type'] == 0: # create kana card using fields
+                KanaCard.create(kana=self.card_config['info']['kana'],romaji=self.card_config['info']['romaji'])
+                print('kana card created')
+            if self.card_config['type'] == 1: # create kanji card using fields
+                KanjiCard.create(kanji=self.card_config['info']['kanji'],meaning=self.card_config['info']['meaning'])
+                print('kanji card created')
+            if self.card_config['type'] == 2: # create phrase card using fields
+                PhraseCard.create(kanji_phrase=self.card_config['info']['kanji'],kana_phrase=self.card_config['info']['kana'], meaning=self.card_config['info']['meaning'])
+                print('phrase card created')
+            self.card_config = self.__init_card_config_dict__
+        else:
+            print(f'cannot save - card type not set')
+        print('save clicked')
+
+    def on_delete_pushbutton_clicked(self) -> None:
+        #TODO: delete entry from database
+        print('delete clicked')
+
+    def on_search_pushbutton_clicked(self) -> None:
+        print('search clicked')
+        #TODO: parse self.search_lineEdit.text(), conduct search on database, and populate kanji list window
 
