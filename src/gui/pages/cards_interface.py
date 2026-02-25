@@ -1,6 +1,6 @@
 import os
 from PyQt6 import uic
-from PyQt6.QtWidgets import QWidget, QLineEdit, QRadioButton, QPushButton
+from PyQt6.QtWidgets import QWidget, QLineEdit, QRadioButton, QPushButton, QListWidget, QListWidgetItem
 from data import *
 
 
@@ -26,10 +26,18 @@ class CardsInterface(QWidget):
         self.character_radioButton: QRadioButton
         self.word_radioButton: QRadioButton
         self.phrase_radioButton: QRadioButton
+        self.cards_listWidget: QListWidget
         self.save_pushButton: QPushButton | None = None
         ui_file_path = os.path.abspath(__file__).replace('.py', '.ui')
-        
+        self.search_cards = None
+        with maybe_connection(None) as con:
+            self.all_kana_cards = list(query_learnable_kana_cards(con)) + list(query_reviewable_kana_card(con))
+            self.all_kanji_cards = list(query_learnable_kanji_cards(con)) + list(query_reviewable_kanji_cards(con))
+            self.all_phrase_cards = list(query_learnable_phrase_cards(con)) + list(query_reviewable_phrase_cards(con))
         uic.loadUi(ui_file_path, self) # pyright: ignore[reportPrivateImportUsage]
+        self.cards_listWidget.addItems(card.kana for card in self.all_kana_cards)
+        self.cards_listWidget.addItems(card.kanji for card in self.all_kanji_cards)
+        self.cards_listWidget.addItems(card.kanji_phrase for card in self.all_phrase_cards)
 
         # Verify the ui elements were correctly named
         assert self.answer_lineEdit is not None
