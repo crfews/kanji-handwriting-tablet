@@ -23,5 +23,5 @@ __all__ = [
     'query_learnable_kanji_cards',
     'query_reviewable_kanji_cards',
     'query_learnable_phrase_cards',
-    'query_reviewable_kanji_cards'
+    'query_reviewable_phrase_cards'
 ]
