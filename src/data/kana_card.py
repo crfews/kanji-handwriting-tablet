@@ -226,6 +226,7 @@ class KanaCard:
         elif not self._drawing_id is None:
             # Handle removing unused drawings
             pass
+        d.glyph = self._kana
         self._drawing_id = d.id
         self._synced = False
 

@@ -41,6 +41,7 @@ drawing_table = sqla.Table(
     sqla.Column('id', sqla.Integer, primary_key=True, nullable=False),
     sqla.Column('stroke_count', sqla.Integer, unique=False, nullable=False),
     sqla.Column('strokes', sqla.PickleType, unique=False, nullable=False),
+    sqla.Column('glyph', sqla.String, unique=False, nullable=True),
     sqla.Index('ix_drawings_stroke_count', 'stroke_count'))
 
 card_table = sqla.Table(

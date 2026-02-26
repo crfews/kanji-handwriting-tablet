@@ -17,13 +17,13 @@ def query_learnable_card_ids(kind: str, con: sqla.Connection | None = None) -> I
         .select_from(R.join(B, R.c.card_b_id == B.c.id))
         .where(R.c.b_is_prereq == True)
         .where(R.c.card_a_id == A.c.id)
-        .where(B.c.study_id <= 1))
+        .where(B.c.study_id < 1))
 
+    # query for cards where they have a study id < 1, have a kind == kind, and have no unlearned prereqs
     q = sqla.select(A.c.id)\
              .where(A.c.study_id < 1)\
              .where(A.c.kind == kind)\
              .where(~has_unlearned_prereq)
-
     with maybe_connection(con) as con:
         result = con.execute(q)
         for r in result:

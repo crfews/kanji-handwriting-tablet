@@ -181,7 +181,8 @@ class LearnKanaWidget(QtWidgets.QWidget):
             f"strokes={len(strokes)}"
         )
 
-        self._current.drawing = Drawing.create(strokes)
+        
+        self._current.drawing = Drawing.create(strokes, self._current.kana)
         self._current.card.study_id = 1
         self._current.sync()
         

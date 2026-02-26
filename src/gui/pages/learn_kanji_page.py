@@ -143,7 +143,7 @@ class LearnKanjiWidget(QtWidgets.QWidget):
             f"strokes={len(strokes)}"
         )
 
-        self._current.drawing = Drawing.create(strokes)
+        self._current.drawing = Drawing.create(strokes,self._current.kanji)
         self._current.card.study_id = 1
         self._current.sync()
         

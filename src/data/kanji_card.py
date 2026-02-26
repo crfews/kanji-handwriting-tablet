@@ -284,6 +284,7 @@ class KanjiCard:
         elif self._drawing_id != -1:
             # Handle removing unused drawings
             pass
+        d.glyph = self.kanji
         self._drawing_id = d.id
         self._synced = False
 
