@@ -31,9 +31,9 @@ class CardsInterface(QWidget):
         ui_file_path = os.path.abspath(__file__).replace('.py', '.ui')
         self.search_cards = None
         with maybe_connection(None) as con:
-            self.all_kana_cards = list(query_learnable_kana_cards(con)) + list(query_reviewable_kana_card(con))
-            self.all_kanji_cards = list(query_learnable_kanji_cards(con)) + list(query_reviewable_kanji_cards(con))
-            self.all_phrase_cards = list(query_learnable_phrase_cards(con)) + list(query_reviewable_phrase_cards(con))
+            self.all_kana_cards = list(KanaCard.every())
+            self.all_kanji_cards = list(KanjiCard.every())
+            self.all_phrase_cards = list(PhraseCard.every())
         uic.loadUi(ui_file_path, self) # pyright: ignore[reportPrivateImportUsage]
         self.cards_listWidget.addItems(card.kana for card in self.all_kana_cards)
         self.cards_listWidget.addItems(card.kanji for card in self.all_kanji_cards)
@@ -70,11 +70,39 @@ class CardsInterface(QWidget):
         self.save_pushButton.clicked.connect(self.on_save_pushbutton_clicked)
         self.delete_pushButton.clicked.connect(self.on_delete_pushbutton_clicked)
         self.search_pushButton.clicked.connect(self.on_search_pushbutton_clicked)
+        self.cards_listWidget.itemClicked.connect(self.on_list_item_clicked)
 
         # Default set the character radio button
         self.kana_radioButton.setChecked(True)
 
 
+    def on_list_item_clicked(self,item) -> None:
+        # get type of card, search db
+        char = ''
+        kana_w = ''
+        romaji = ''
+        meaning = ''
+        related = ''
+        if is_kana(item.text()):
+            card = KanaCard.by_kana(item.text())
+            char = card.kana
+            kana_w = card.kana
+            romaji = card.romaji
+        elif is_kanji(item.text()):
+            card = KanjiCard.by_kanji(item.text())
+            char = card.kanji
+            kana_w = card.on_yomi
+            meaning = card.meaning
+        else:
+            pass
+        #TODO display phrase info 
+        self.answer_lineEdit.setText(char)
+        self.kana_lineEdit.setText(kana_w)
+        self.romaji_lineEdit.setText(romaji)
+        self.meaning_lineEdit.setText(meaning)
+
+        
+        pass
 
     # TODO: adjust these limits, they are arbitrarily chosen, and discuss radio button meaning
     def on_kana_radio_clicked(self) -> None:
