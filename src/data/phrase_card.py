@@ -26,6 +26,7 @@ class PhraseCard:
     _meaning_cache: dict[str, dict[int,PhraseCard]] = {}
     _meaning_searched: dict[str, bool] = {}
     _card_id_cache: dict[int, PhraseCard] = {}
+    _phrase_cache: dict[str, dict[int,PhraseCard]] = {}
     _searched_db: bool = False
 
     # Class Methods ############################################################
@@ -40,6 +41,11 @@ class PhraseCard:
         assert pc._db_id not in cls._meaning_cache[pc.meaning]
         cls._meaning_cache[pc.meaning][pc._db_id] = pc
         
+        if pc._kanji_phrase not in cls._phrase_cache:
+            cls._phrase_cache[pc._kanji_phrase] = {}
+        assert pc._db_id not in cls._phrase_cache[pc.kanji_phrase]
+        cls._phrase_cache[pc.kanji_phrase][pc._db_id] = pc
+
         cls._id_cache[pc._db_id] = pc
         cls._card_id_cache[pc.card.id] = pc
 
@@ -52,6 +58,11 @@ class PhraseCard:
         del cls._meaning_cache[pc.meaning][pc._db_id]
         if len(cls._meaning_cache[pc.meaning]) == 0:
             del cls._meaning_cache[pc.meaning]
+        # Clear phrase cache
+        
+        del cls._phrase_cache[pc.kanji_phrase][pc._db_id]
+        if len(cls._phrase_cache[pc.kanji_phrase]) == 0:
+            del cls._phrase_cache[pc.kanji_phrase]
 
 
     @classmethod
@@ -254,6 +265,23 @@ class PhraseCard:
                 obj = PhraseCard._create_from_mapping(res)
         return obj
 
+    @classmethod
+    def by_phrase(cls, phrase: str, con: sqla.Connection | None = None) -> PhraseCard | None:
+        obj = cls._phrase_cache.get(phrase)
+        if obj is not None:
+            return list(obj.values())[0]
+        elif cls._searched_db:
+            return
+        
+        with maybe_connection(con) as con2:
+            stmnt = sqla.select(phrase_card_table)\
+                    .where(phrase_card_table.c.kanji_phrase == kanji)
+            res = con2.execute(stmnt)\
+                    .mappings()\
+                    .one_or_one()
+            if res is not None:
+                obj = PhraseCard._create_from_mapping(res)
+        return list(obj.values())[0]
     
     # Constructor ##############################################################
 

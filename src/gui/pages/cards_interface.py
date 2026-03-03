@@ -94,7 +94,11 @@ class CardsInterface(QWidget):
             kana_w = card.on_yomi
             meaning = card.meaning
         else:
-            pass
+            card = PhraseCard.by_phrase(item.text())
+            char = card.kanji_phrase
+            kana_w = card.kana_phrase
+            meaning = card.meaning
+            
         #TODO display phrase info 
         self.answer_lineEdit.setText(char)
         self.kana_lineEdit.setText(kana_w)
