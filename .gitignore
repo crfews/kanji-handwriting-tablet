@@ -8,3 +8,4 @@ pyproject.toml.user
 .direnv/
 *.bak
 .DS_Store
+db.sqlite3
