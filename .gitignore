@@ -1,4 +1,6 @@
 # Ignore any virtual environment directory in subsequent folders
+#Ignore db
+*.sqlite3*
 .venv/
 .qtcreator/
 __pycache__/
