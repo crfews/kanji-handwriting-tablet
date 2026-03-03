@@ -91,9 +91,9 @@ class LearnKanaPage(QtWidgets.QWidget):
         )
         right_layout.addWidget(self.drawing, 1)
 
-        self.clear_user_btn = QtWidgets.QPushButton("Clear", right_box)
-        self.clear_user_btn.clicked.connect(self.drawing.force_clear)
-        right_layout.addWidget(self.clear_user_btn)
+        #self.clear_user_btn = QtWidgets.QPushButton("Clear", right_box)
+        #self.clear_user_btn.clicked.connect(self.drawing.force_clear)
+        #right_layout.addWidget(self.clear_user_btn)
 
         panels.addWidget(left_box, 1)
         panels.addWidget(right_box, 1)

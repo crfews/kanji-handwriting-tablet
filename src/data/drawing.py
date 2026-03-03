@@ -142,8 +142,9 @@ class Drawing:
 
 
     @classmethod
-    def by_glyph(cls, g: str, con: sqla.Connection) -> dict[int, Drawing] | None:
-        if cls._glyph_cache_searched_db[g]:
+    def by_glyph(cls, g: str, con: sqla.Connection | None = None) -> dict[int, Drawing] | None:
+        obj = cls._glyph_cache_searched_db.get(g)
+        if obj is not None and obj:
             return cls._glyph_cache.get(g)
 
         with maybe_connection(con) as con:

@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget
 from gui.pages.handwriting_manager import HandwritingManager
-from gui.pages.cards_interface import CardsInterface
+#from gui.pages.cards_interface import CardsInterface
 from gui.pages.review_scheduler import ReviewScheduler
 from gui.pages.QNAPage import QNAPage
 from gui.pages.home_page import HomePage
@@ -12,6 +12,9 @@ from gui.pages.learn_kanji_page import LearnKanjiWidget
 from gui.pages.review_scheduler import ReviewScheduler
 from gui.pages.review_kana_page import ReviewKanaPage
 from gui.pages.review_kanji_page import ReviewKanjiPage
+from gui.pages.learn_phrase_page import LearnPhrasePage
+from gui.pages.review_phrase_page import ReviewPhrasePage
+
 
 class MainWindow(QMainWindow):
     """The class acting as the root widget for the whole application"""
@@ -55,7 +58,7 @@ class MainWindow(QMainWindow):
         # Add pages
         self.home_page = HomePage(self)
         self.handwriting_page = HandwritingManager(self)
-        self.cards_page = CardsInterface(self)
+ #       self.cards_page = CardsInterface(self)
         self.review = ReviewScheduler(self)
         self.qna_page = QNAPage(self)
         self.import_page = ImportPage(self)
@@ -64,13 +67,17 @@ class MainWindow(QMainWindow):
         self.review_scheduler = ReviewScheduler(self)
         self.review_kana_page = ReviewKanaPage(self)
         self.review_kanji_page = ReviewKanjiPage(self)
+        self.learn_phrase_page = LearnPhrasePage(self)
+        self.review_phrase_page = ReviewPhrasePage(self)
+
+
         
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
         self.stack.addWidget(self.import_page)
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.handwriting_page)
-        self.stack.addWidget(self.cards_page)
+  #      self.stack.addWidget(self.cards_page)
         self.stack.addWidget(self.review)
         self.stack.addWidget(self.qna_page)
         self.stack.addWidget(self.learn_kana_page)
@@ -78,6 +85,8 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.review_scheduler)
         self.stack.addWidget(self.review_kana_page)
         self.stack.addWidget(self.review_kanji_page)
+        self.stack.addWidget(self.learn_phrase_page)
+        self.stack.addWidget(self.review_phrase_page)
         
         # Start on home
         self.stack.setCurrentWidget(self.home_page)
@@ -89,7 +98,7 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('Import', self.import_page)
         self.add_page_to_menu('Home', self.home_page)
         self.add_page_to_menu('Handwriting Manager', self.handwriting_page)
-        self.add_page_to_menu('Cards Interface', self.cards_page)
+   #     self.add_page_to_menu('Cards Interface', self.cards_page)
         self.add_page_to_menu('Review', self.review)
         self.add_page_to_menu('QNA', self.qna_page)
         self.add_page_to_menu('Learn Kana', self.learn_kana_page)
@@ -97,6 +106,6 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('Review Scheduler', self.review_scheduler)
         self.add_page_to_menu('Review Kana', self.review_kana_page)
         self.add_page_to_menu('Review Kanji', self.review_kanji_page)
-
-
+        self.add_page_to_menu('Learn Phrase', self.learn_phrase_page)
+        self.add_page_to_menu('Review Phrase', self.review_phrase_page)
     

@@ -14,7 +14,7 @@ from gui.widgets.writing_widgets import CharacterDrawing
 from gui.widgets.drawing_display import DrawingDisplay
 
 from logic.grade_handwriting import grade_strokes
-
+from logic.review_card import review_card_bin
 
 def _set_grade_badge(lbl: QtWidgets.QLabel, grade: int) -> None:
     # If emoji rendering is flaky on your system, swap these to: "✔", "●", "✖"
@@ -57,6 +57,10 @@ class ReviewKanaPage(QtWidgets.QWidget):
         self.kana_question_widget: Optional[KanaQuestionWidget] = None
         self.kana_answer_widget: Optional[KanaAnswerWidget] = None
 
+        # Attempt state
+        self._attempts_on_current = 0
+        self._first_success_try: Optional[int] = None
+        
     def showEvent(self, a0) -> None:
         super().showEvent(a0)
 
@@ -69,6 +73,9 @@ class ReviewKanaPage(QtWidgets.QWidget):
         self._cards = list(query_reviewable_kana_card())
         self._current_card_index = 0
 
+        self._attempts_on_current = 0
+        self._first_success_try = None
+        
         if not self._cards:
             self.stack.setCurrentWidget(self._nothing_here)
             return
@@ -97,14 +104,28 @@ class ReviewKanaPage(QtWidgets.QWidget):
             return
         assert self.kana_answer_widget is not None
 
+
+        self._attempts_on_current += 1
+
+
         c = self._cards[self._current_card_index]
         g = grade_strokes(drawing, c.kana)
 
 
-        # ADD DB LOGIC LATER
+        if g == 0 and self._first_success_try is None:
+            self._first_success_try = self._attempts_on_current
 
+        if self._first_success_try == 1:
+            review_card_bin(c.card, 0)
+        elif self._first_success_try == 2:
+            review_card_bin(c.card,1)
+        elif self._first_success_try is not None and self._first_success_try >= 3:
+            review_card_bin(c.card,2)
+        
         self.kana_answer_widget.answer_provided(drawing, g)
         self.stack.setCurrentWidget(self.kana_answer_widget)
+
+
 
     def try_again(self) -> None:
         # Go back to the question widget for the same card
@@ -118,6 +139,8 @@ class ReviewKanaPage(QtWidgets.QWidget):
         self.kana_question_widget.set_kana(c)
         self.stack.setCurrentWidget(self.kana_question_widget)
 
+
+
     def next_kana(self) -> None:
         if not self._cards:
             self.stack.setCurrentWidget(self._nothing_here)
@@ -128,6 +151,9 @@ class ReviewKanaPage(QtWidgets.QWidget):
         self._current_card_index += 1
         if self._current_card_index < len(self._cards):
             c = self._cards[self._current_card_index]
+            self._attempts_on_current = 0
+            self._first_success_try = None
+            
             self.kana_question_widget.set_kana(c)
             self.kana_answer_widget.set_kana(c)
             self.stack.setCurrentWidget(self.kana_question_widget)

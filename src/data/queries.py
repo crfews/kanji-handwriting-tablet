@@ -47,35 +47,21 @@ def query_reviewable_card_ids(kind: str, con: sqla.Connection | None = None) -> 
 
 
 
-def query_learnable_kana_card_ids(con: sqla.Connection | None = None) -> list[int]:
-    '''Returns a list of kana card card ids where each id respresents a card that has
-    not been studied and has no unlearned prerequisites'''
-    return list(query_learnable_card_ids(KANA_CARD_KIND, con))
-
-
-
 def query_learnable_kana_cards(con: sqla.Connection | None = None) -> Iterator[KanaCard]:
     '''Returns a list of kana card objects where each card represents a card that has
     not been studied and has no unlearned prerequisites'''
-    for c_id in query_learnable_card_ids(KANA_CARD_KIND,con):
+    for c_id in list(query_learnable_card_ids(KANA_CARD_KIND,con=con)):
         knc = KanaCard.by_card_id(c_id)
         if knc:
             yield knc
 
 
 
-def query_reviewable_kana_card_ids(con: sqla.Connection | None = None) -> list[int]:
-    '''Returns a list of kana card card ids where each card id represents a card that has
-    been learned and has a due date before or equal to today'''
-    return list(query_reviewable_card_ids(KANA_CARD_KIND, con))
-
-
-
 def query_reviewable_kana_card(con: sqla.Connection | None = None) -> Iterator[KanaCard]:
     '''Returns a list of kana card objects where each card has been learned and has
     a due date before or equal to today'''
-    for c_id in query_reviewable_card_ids(KANA_CARD_KIND, con):
-        knc = KanaCard.by_card_id(c_id)
+    for c_id in list(query_reviewable_card_ids(KANA_CARD_KIND,con=con)):
+        knc = KanaCard.by_card_id(c_id,con=con)
         if knc:
             yield knc
 
@@ -84,8 +70,8 @@ def query_reviewable_kana_card(con: sqla.Connection | None = None) -> Iterator[K
 def query_learnable_kanji_cards(con: sqla.Connection | None = None) -> Iterator[KanjiCard]:
     '''Returns a list of kanji card objects where each card represents a card that has
     not been studied and has no unlearned prerequisites'''
-    for c_id in query_learnable_card_ids(KANJI_CARD_KIND, con):
-        kjc = KanjiCard.by_card_id(c_id)
+    for c_id in list(query_learnable_card_ids(KANJI_CARD_KIND, con=con)):
+        kjc = KanjiCard.by_card_id(c_id,con=con)
         if kjc:
             yield kjc
 
@@ -94,18 +80,19 @@ def query_learnable_kanji_cards(con: sqla.Connection | None = None) -> Iterator[
 def query_reviewable_kanji_cards(con: sqla.Connection | None = None) -> Iterator[KanjiCard]:
     '''Returns a list of kanji card objects where each card has been learned and has
     a due date before or equal to today'''
-    for c_id in query_reviewable_card_ids(KANJI_CARD_KIND, con):
-        kjc = KanjiCard.by_card_id(c_id)
+    for c_id in list(query_reviewable_card_ids(KANJI_CARD_KIND,con=con)):
+        kjc = KanjiCard.by_card_id(c_id,con=con)
         if kjc:
             yield kjc
+
 
 
 
 def query_learnable_phrase_cards(con: sqla.Connection | None = None) -> Iterator[PhraseCard]:
     '''Returns a list of phrase card objects where each card represents a card
     that has not been studied and has no unlearned prerequisites'''
-    for c_id in query_learnable_card_ids(PHRASE_CARD_KIND, con):
-        pc = PhraseCard.by_card_id(c_id)
+    for c_id in list(query_learnable_card_ids(PHRASE_CARD_KIND, con)):
+        pc = PhraseCard.by_card_id(c_id,con=con)
         if pc:
             yield pc
 
@@ -114,7 +101,7 @@ def query_learnable_phrase_cards(con: sqla.Connection | None = None) -> Iterator
 def query_reviewable_phrase_cards(con: sqla.Connection | None = None) -> Iterator[PhraseCard]:
     '''Returns a list of phrase card objects where each card has been learned and
     has a due date before or equal to today'''
-    for c_id in query_reviewable_card_ids(PHRASE_CARD_KIND, con):
-        pc = PhraseCard.by_card_id(c_id)
+    for c_id in list(query_reviewable_card_ids(PHRASE_CARD_KIND, con)):
+        pc = PhraseCard.by_card_id(c_id,con=con)
         if pc:
             yield pc

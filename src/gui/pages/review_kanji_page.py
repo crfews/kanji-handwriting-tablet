@@ -14,7 +14,7 @@ from gui.widgets.writing_widgets import CharacterDrawing
 from gui.widgets.drawing_display import DrawingDisplay
 
 from logic.grade_handwriting import grade_strokes
-
+from logic.review_card import review_card_bin
 
 def _set_grade_badge(lbl: QtWidgets.QLabel, grade: int) -> None:
     # If emoji rendering is flaky, swap these to: "✔", "●", "✖"
@@ -57,6 +57,12 @@ class ReviewKanjiPage(QtWidgets.QWidget):
         self.kanji_question_widget: Optional[KanjiQuestionWidget] = None
         self.kanji_answer_widget: Optional[KanjiAnswerWidget] = None
 
+        # Attempt state
+        self._attempts_on_current = 0
+        self._first_success_try: Optional[int] = None
+
+
+
     def showEvent(self, a0) -> None:
         super().showEvent(a0)
 
@@ -65,10 +71,15 @@ class ReviewKanjiPage(QtWidgets.QWidget):
             self._loaded_once = True
             self._load_if_needed()
 
+
+
     def _load_if_needed(self) -> None:
         self._cards = list(query_reviewable_kanji_cards())
         self._current_card_index = 0
 
+        self._attempts_on_current = 0
+        self._first_success_try = None
+        
         if not self._cards:
             self.stack.setCurrentWidget(self._nothing_here)
             return
@@ -97,18 +108,22 @@ class ReviewKanjiPage(QtWidgets.QWidget):
             return
         assert self.kanji_answer_widget is not None
 
+        self._attempts_on_current += 1
+        
         c = self._cards[self._current_card_index]
         g = grade_strokes(drawing, c.kanji)
 
-        # ADD DB LOGIC LATER
-        
-        # ✅ Scheduling update hook goes here, typically only when g == 0
-        # if g == 0:
-        #     ... update c.card scheduling ...
-        #     c.sync()
-
+        if g == 0 and self._attempts_on_current == 1:
+            review_card_bin(c.card,0)
+        elif g == 0 and self._attempts_on_current == 2:
+            review_card_bin(c.card,1)
+        elif g == 0:
+            review_card_bin(c.card,2)
+            
         self.kanji_answer_widget.answer_provided(drawing, g)
         self.stack.setCurrentWidget(self.kanji_answer_widget)
+
+
 
     def try_again(self) -> None:
         # Go back to the question widget for the same card
@@ -121,6 +136,8 @@ class ReviewKanjiPage(QtWidgets.QWidget):
         self.kanji_question_widget.set_kanji(c)
         self.stack.setCurrentWidget(self.kanji_question_widget)
 
+
+
     def next_kanji(self) -> None:
         if not self._cards:
             self.stack.setCurrentWidget(self._nothing_here)
@@ -131,6 +148,9 @@ class ReviewKanjiPage(QtWidgets.QWidget):
         self._current_card_index += 1
         if self._current_card_index < len(self._cards):
             c = self._cards[self._current_card_index]
+            self._attempts_on_current = 0
+            self._first_success_try = None
+            
             self.kanji_question_widget.set_kanji(c)
             self.kanji_answer_widget.set_kanji(c)
             self.stack.setCurrentWidget(self.kanji_question_widget)

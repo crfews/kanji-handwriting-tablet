@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Iterator
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
@@ -28,8 +28,9 @@ class LearnKanjiPage(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self._cards: list[KanjiCard] = []
-        self._idx: int = -1
+        # self._cards: list[KanjiCard] = []
+        self._cards: Optional[Iterator[KanjiCard]] = None
+        #self._idx: int = -1
         self._current: Optional[KanjiCard] = None
 
         root = QtWidgets.QVBoxLayout(self)
@@ -141,22 +142,20 @@ class LearnKanjiPage(QtWidgets.QWidget):
 
     def showEvent(self, a0):
         super().showEvent(a0)
-        if not self._cards:  # prevent restarting on every show
+        if self._cards is None:  # prevent restarting on every show
             self.start()
 
     @QtCore.pyqtSlot()
     def start(self) -> None:
         if not self._cards:
-            with maybe_connection(None) as con:
-                self._cards = list(query_learnable_kanji_cards(con))
+            self._cards = query_learnable_kanji_cards()
 
         self._idx = -1
         self.next_card()
 
     @QtCore.pyqtSlot()
     def restart(self) -> None:
-        self._cards = []
-        self._idx = -1
+        self._cards = None
         self._current = None
 
         self.drawing.force_clear()
@@ -170,18 +169,26 @@ class LearnKanjiPage(QtWidgets.QWidget):
         self.q_status.setText("Press Start to begin.")
         self.stack.setCurrentWidget(self.done_page)
 
+
+
     @QtCore.pyqtSlot()
     def next_card(self) -> None:
         self._reset_status_style()
 
-        self._idx += 1
-        if self._idx >= len(self._cards):
-            self._current = None
+        if self._cards is None:
             self.done_page.setText("✓ No more learnable kanji cards.")
             self.stack.setCurrentWidget(self.done_page)
             return
 
-        self._current = self._cards[self._idx]
+        try:
+            self._current = next(self._cards)
+        except StopIteration:
+            self._current = None
+            self._cards = None
+            self.done_page.setText("✓ No more learnable kanji cards.")
+            self.stack.setCurrentWidget(self.done_page)
+            return
+
         self.drawing.force_clear()
 
         self.kanji_label.setText(self._current.kanji)
@@ -198,10 +205,8 @@ class LearnKanjiPage(QtWidgets.QWidget):
             self.reading_label.setText("")
 
         self.meaning_label.setText(self._current.meaning or "")
-
         self.q_status.setText("Watch the correct drawing, then copy it and click Submit.")
 
-        # Load + play canonical drawing (must exist in DB for this card)
         d = self._current.drawing
         if d is not None and d.strokes:
             self.canonical_display.set_strokes(d.strokes)
@@ -212,6 +217,51 @@ class LearnKanjiPage(QtWidgets.QWidget):
             self.q_status.setText("No canonical drawing found for this card. Draw anyway and Submit.")
 
         self.stack.setCurrentWidget(self.q_page)
+
+
+
+    # @QtCore.pyqtSlot()
+    # def next_card(self) -> None:
+    #     self._reset_status_style()
+
+    #     self._idx += 1
+    #     if self._idx >= len(self._cards):
+    #         self._current = None
+    #         self.done_page.setText("✓ No more learnable kanji cards.")
+    #         self.stack.setCurrentWidget(self.done_page)
+    #         return
+
+    #     self._current = self._cards[self._idx]
+    #     self.drawing.force_clear()
+
+    #     self.kanji_label.setText(self._current.kanji)
+
+    #     oy = self._current.on_yomi or ""
+    #     ky = self._current.kun_yomi or ""
+    #     if oy and ky:
+    #         self.reading_label.setText(f"On: {oy}   Kun: {ky}")
+    #     elif oy:
+    #         self.reading_label.setText(f"On: {oy}")
+    #     elif ky:
+    #         self.reading_label.setText(f"Kun: {ky}")
+    #     else:
+    #         self.reading_label.setText("")
+
+    #     self.meaning_label.setText(self._current.meaning or "")
+
+    #     self.q_status.setText("Watch the correct drawing, then copy it and click Submit.")
+
+    #     # Load + play canonical drawing (must exist in DB for this card)
+    #     d = self._current.drawing
+    #     if d is not None and d.strokes:
+    #         self.canonical_display.set_strokes(d.strokes)
+    #         self.canonical_display.restart()
+    #     else:
+    #         self.canonical_display.set_strokes([])
+    #         self.canonical_display.stop()
+    #         self.q_status.setText("No canonical drawing found for this card. Draw anyway and Submit.")
+
+    #     self.stack.setCurrentWidget(self.q_page)
 
     # -----------------------
     # Canonical controls
