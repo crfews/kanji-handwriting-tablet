@@ -37,7 +37,7 @@ class CardsInterface(QWidget):
         uic.loadUi(ui_file_path, self) # pyright: ignore[reportPrivateImportUsage]
         self.cards_listWidget.addItems(card.kana for card in self.all_kana_cards)
         self.cards_listWidget.addItems(card.kanji for card in self.all_kanji_cards)
-        self.cards_listWidget.addItems(card.kanji_phrase for card in self.all_phrase_cards)
+        self.cards_listWidget.addItems(card.kanji_phrase if card.kanji_phrase is not None else card.kana_phrase for card in self.all_phrase_cards)
 
         # Verify the ui elements were correctly named
         assert self.answer_lineEdit is not None
@@ -94,7 +94,11 @@ class CardsInterface(QWidget):
             kana_w = card.on_yomi
             meaning = card.meaning
         else:
-            pass
+            card = PhraseCard.by_phrase(item.text())
+            char = card.kanji_phrase
+            kana_w = card.kana_phrase
+            meaning = card.meaning
+
         #TODO display phrase info 
         self.answer_lineEdit.setText(char)
         self.kana_lineEdit.setText(kana_w)
