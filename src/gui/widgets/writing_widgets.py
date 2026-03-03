@@ -2,7 +2,17 @@ from typing import Callable, Optional
 from itertools import cycle
 from PyQt6.QtCore import pyqtSignal, pyqtSlot, Qt, QPoint, QRect
 from PyQt6.QtGui import QPainter, QPen, QImage, QColor, QMouseEvent, QPaintEvent
-from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
+from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton, QFrame
+
+
+
+
+
+
+
+
+
+
 
 
 class DrawingSurface(QWidget):
@@ -117,7 +127,8 @@ class DrawingSurface(QWidget):
 
 
 
-class CharacterDrawing(QWidget):
+#class CharacterDrawing(QWidget):
+class CharacterDrawing(QFrame):
     cleared = pyqtSignal()       # must be class attribute
     submitted = pyqtSignal(list) # must be class attribute
     
