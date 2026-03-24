@@ -23,7 +23,10 @@ class PhraseCard:
     # Class Variables ##########################################################
 
     _id_cache: dict[int, PhraseCard] = {}
+    _meaning_cache: dict[str, dict[int,PhraseCard]] = {}
+    _meaning_searched: dict[str, bool] = {}
     _card_id_cache: dict[int, PhraseCard] = {}
+    _kanji_phrase_cache: dict[str, dict[int,PhraseCard]] = {}
     _searched_db: bool = False
 
     # Class Methods ############################################################
@@ -32,6 +35,17 @@ class PhraseCard:
     def _add_to_cache(cls, pc: PhraseCard):
         assert pc._db_id not in cls._id_cache
         assert pc.card.id not in cls._card_id_cache
+        
+        if pc.meaning not in cls._meaning_cache:
+            cls._meaning_cache[pc.meaning] = {}
+        assert pc._db_id not in cls._meaning_cache[pc.meaning]
+        cls._meaning_cache[pc.meaning][pc._db_id] = pc
+        
+        if pc._kanji_phrase not in cls._kanji_phrase_cache:
+            cls._kanji_phrase_cache[pc._kanji_phrase] = {}
+        assert pc._db_id not in cls._kanji_phrase_cache[pc.kanji_phrase]
+        cls._kanji_phrase_cache[pc.kanji_phrase][pc._db_id] = pc
+
         cls._id_cache[pc._db_id] = pc
         cls._card_id_cache[pc.card.id] = pc
 
@@ -39,6 +53,16 @@ class PhraseCard:
     def _remove_from_cache(cls, pc: PhraseCard):
         del cls._id_cache[pc._db_id]
         del cls._card_id_cache[pc.card.id]
+        
+        # Clear the meaning cache
+        del cls._meaning_cache[pc.meaning][pc._db_id]
+        if len(cls._meaning_cache[pc.meaning]) == 0:
+            del cls._meaning_cache[pc.meaning]
+        # Clear phrase cache
+        
+        del cls._kanji_phrase_cache[pc.kanji_phrase][pc._db_id]
+        if len(cls._kanji_phrase_cache[pc.kanji_phrase]) == 0:
+            del cls._kanji_phrase_cache[pc.kanji_phrase]
 
 
     @classmethod
@@ -201,6 +225,28 @@ class PhraseCard:
         
         return obj
 
+    
+
+    @classmethod
+    def by_meaning(cls, meaning: str, con: sqla.Connection | None = None) -> dict[int, PhraseCard] | None:
+
+        obj = cls._meaning_searched.get(meaning)
+        if obj is not None and obj == True:
+            return cls._meaning_cache.get(meaning)
+
+        with maybe_connection(con) as con:
+            stmnt = sqla.select(phrase_card_table)\
+                        .where(phrase_card_table.c.meaning == meaning)
+            rs = con.execute(stmnt)\
+                    .mappings()
+            for r in rs:
+                _ = cls._create_from_mapping(r)
+
+        cls._meaning_searched[meaning] = True
+        return cls._meaning_cache.get(meaning)
+    
+    
+
     @classmethod
     def by_card_id(cls, id:int, con: sqla.Connection | None = None) -> PhraseCard | None:
         obj = cls._card_id_cache.get(id)
@@ -219,6 +265,23 @@ class PhraseCard:
                 obj = PhraseCard._create_from_mapping(res)
         return obj
 
+    @classmethod
+    def by_phrase(cls, phrase: str, con: sqla.Connection | None = None) -> PhraseCard | None:
+        obj = cls._kanji_phrase_cache.get(phrase)
+        if obj is not None:
+            return list(obj.values())[0]
+        elif cls._searched_db:
+            return
+        
+        with maybe_connection(con) as con2:
+            stmnt = sqla.select(phrase_card_table)\
+                    .where(phrase_card_table.c.kanji_phrase == kanji)
+            res = con2.execute(stmnt)\
+                    .mappings()\
+                    .one_or_one()
+            if res is not None:
+                obj = PhraseCard._create_from_mapping(res)
+        return list(obj.values())[0]
     
     # Constructor ##############################################################
 

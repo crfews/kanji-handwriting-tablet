@@ -1,4 +1,6 @@
 # Ignore any virtual environment directory in subsequent folders
+#Ignore db
+*.sqlite3*
 .venv/
 .qtcreator/
 __pycache__/
@@ -8,3 +10,4 @@ pyproject.toml.user
 .direnv/
 *.bak
 .DS_Store
+db.sqlite3

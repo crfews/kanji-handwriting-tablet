@@ -1,190 +1,268 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional
-from datetime import date
-import sqlalchemy as sqla
+from typing import Optional
+
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
-from data import KanaCard, Drawing
+from PyQt6.QtGui import QColorConstants, QPalette, QColor
+
+from data import KanaCard
 from data.database import maybe_connection
+from data.queries import query_learnable_kana_cards
+
 from gui.widgets.writing_widgets import CharacterDrawing
-# your stuff
-# from data.queries import query_learnable_kana_cards
-# from data import KanaCard
-# from widgets.character_drawing import CharacterDrawing
-
-# IMPORTANT FIX: DrawingSurface must use instance state (not class vars)
-# In your DrawingSurface class, remove these class attributes:
-#   strokes = []
-#   current_stroke = None
-# and instead set them in __init__:
-#   self.strokes: list[list[float]] = []
-#   self.current_stroke: list[float] | None = None
+from gui.widgets.drawing_display import DrawingDisplay
+from logic.grade_handwriting import grade_strokes
 
 
-class LearnKanaWidget(QtWidgets.QWidget):
+class LearnKanaPage(QtWidgets.QWidget):
     """
-    Minimal "learn session" driver:
-      - iterates learnable KanaCards
-      - shows one card
-      - waits for drawing submission before advancing
+    Learn session (Kana):
+      - iterates query_learnable_kana_cards()
+      - shows canonical drawing (left) + user drawing box (right)
+      - user submits strokes -> grade_strokes(strokes, kana)
+      - must get grade==0 to proceed (otherwise forced retry)
+      - user can restart canonical animation and clear user drawing
     """
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Session state
-        self._it: Optional[Iterator[KanaCard]] = None
+        self._cards: list[KanaCard] = []
+        self._idx: int = -1
         self._current: Optional[KanaCard] = None
-        self._submitted_for_current = False
 
-        # --- UI ---
         root = QtWidgets.QVBoxLayout(self)
         root.setSpacing(12)
 
-        # Top: card prompt / info
-        self.kana_label = QtWidgets.QLabel("", self)
+        self.stack = QtWidgets.QStackedWidget(self)
+        root.addWidget(self.stack, 1)
+
+        # -----------------------
+        # Main learn page
+        # -----------------------
+        self.q_page = QtWidgets.QWidget(self.stack)
+        q_root = QtWidgets.QVBoxLayout(self.q_page)
+        q_root.setSpacing(12)
+
+        # Header: kana + romaji
+        self.kana_label = QtWidgets.QLabel("—", self.q_page)
         self.kana_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         f = self.kana_label.font()
         f.setPointSize(64)
         f.setBold(True)
         self.kana_label.setFont(f)
 
-        self.romaji_label = QtWidgets.QLabel("", self)
+        self.romaji_label = QtWidgets.QLabel("", self.q_page)
         self.romaji_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        self.status_label = QtWidgets.QLabel("", self)
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.q_status = QtWidgets.QLabel("Press Start to begin.", self.q_page)
+        self.q_status.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        root.addWidget(self.kana_label)
-        root.addWidget(self.romaji_label)
-        root.addWidget(self.status_label)
+        q_root.addWidget(self.kana_label)
+        q_root.addWidget(self.romaji_label)
+        q_root.addWidget(self.q_status)
 
-        # Middle: drawing
+        # Two-panel area: canonical (left) + user drawing (right)
+        panels = QtWidgets.QHBoxLayout()
+        panels.setSpacing(12)
+
+        # Left: canonical drawing (animated)
+        left_box = QtWidgets.QGroupBox("Correct drawing", self.q_page)
+        left_layout = QtWidgets.QVBoxLayout(left_box)
+        left_layout.setSpacing(8)
+
+        self.canonical_display = DrawingDisplay(parent=left_box, width=320, height=320)
+        left_layout.addWidget(self.canonical_display, 1)
+
+        self.replay_btn = QtWidgets.QPushButton("Replay animation", left_box)
+        self.replay_btn.clicked.connect(self._replay_canonical)
+        left_layout.addWidget(self.replay_btn)
+
+        # Right: user drawing input
+        right_box = QtWidgets.QGroupBox("Your drawing", self.q_page)
+        right_layout = QtWidgets.QVBoxLayout(right_box)
+        right_layout.setSpacing(8)
+
         self.drawing = CharacterDrawing(
-            parent=self,
-            on_cleared=self._on_cleared,
+            parent=right_box,
             on_submitted=self._on_submitted,
+            on_cleared=self._on_cleared,
         )
-        root.addWidget(self.drawing, 1)
+        right_layout.addWidget(self.drawing, 1)
 
-        # Bottom: session controls (optional but handy)
-        btns = QtWidgets.QHBoxLayout()
-        self.start_btn = QtWidgets.QPushButton("Start", self)
+        #self.clear_user_btn = QtWidgets.QPushButton("Clear", right_box)
+        #self.clear_user_btn.clicked.connect(self.drawing.force_clear)
+        #right_layout.addWidget(self.clear_user_btn)
+
+        panels.addWidget(left_box, 1)
+        panels.addWidget(right_box, 1)
+        q_root.addLayout(panels, 1)
+
+        # Start/Restart session row
+        q_btns = QtWidgets.QHBoxLayout()
+        self.start_btn = QtWidgets.QPushButton("Start", self.q_page)
         self.start_btn.clicked.connect(self.start)
 
-        self.skip_btn = QtWidgets.QPushButton("Skip", self)
-        self.skip_btn.clicked.connect(self.next_card)
-
-        self.restart_btn = QtWidgets.QPushButton("Restart", self)
+        self.restart_btn = QtWidgets.QPushButton("Restart session", self.q_page)
         self.restart_btn.clicked.connect(self.restart)
 
-        btns.addWidget(self.start_btn)
-        btns.addWidget(self.skip_btn)
-        btns.addWidget(self.restart_btn)
-        root.addLayout(btns)
+        q_btns.addWidget(self.start_btn)
+        q_btns.addWidget(self.restart_btn)
+        q_root.addLayout(q_btns)
 
-        self._set_idle()
+        # -----------------------
+        # Empty / Done page
+        # -----------------------
+        self.done_page = QtWidgets.QLabel("Nothing to learn.", self.stack)
+        self.done_page.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-    # ---------------------------
+        self.stack.addWidget(self.done_page)
+        self.stack.addWidget(self.q_page)
+        self.stack.setCurrentWidget(self.done_page)
+
+        # -----------------------
+        # Defaults for status label (font/palette reset)
+        # -----------------------
+        self._q_status_default_font = self.q_status.font()
+        self._q_status_default_palette = self.q_status.palette()
+
+    # -----------------------
     # Session control
-    # ---------------------------
+    # -----------------------
+
+    def _reset_status_style(self) -> None:
+        self.q_status.setFont(self._q_status_default_font)
+        self.q_status.setPalette(self._q_status_default_palette)
+
+    def showEvent(self, a0):
+        super().showEvent(a0)
+        if not self._cards:  # prevent restarting on every show
+            self.start()
 
     @QtCore.pyqtSlot()
     def start(self) -> None:
-        if self._it is None:
+        if not self._cards:
             with maybe_connection(None) as con:
-                from data.queries import query_learnable_kana_cards  # local import to avoid cycles
-                self._it = iter(list(query_learnable_kana_cards(con)))
-                                    
+                self._cards = list(query_learnable_kana_cards(con))
+
+        self._idx = -1
         self.next_card()
 
     @QtCore.pyqtSlot()
     def restart(self) -> None:
-        self._it = None
+        self._cards = []
+        self._idx = -1
         self._current = None
-        self._submitted_for_current = False
+
         self.drawing.force_clear()
-        self._set_idle()
+        self.canonical_display.set_strokes([])  # clear display
+        self.canonical_display.stop()
+
+        self.kana_label.setText("—")
+        self.romaji_label.setText("")
+        self._reset_status_style()
+        self.q_status.setText("Press Start to begin.")
+        self.stack.setCurrentWidget(self.done_page)
 
     @QtCore.pyqtSlot()
     def next_card(self) -> None:
-        if self._it is None:
-            self.start()
-            return
+        self._reset_status_style()
 
-        try:
-            self._current = next(self._it)
-        except StopIteration:
+        self._idx += 1
+        if self._idx >= len(self._cards):
             self._current = None
-            self._set_done()
+            self.done_page.setText("✓ No more learnable kana cards.")
+            self.stack.setCurrentWidget(self.done_page)
             return
 
-        self._submitted_for_current = False
+        self._current = self._cards[self._idx]
         self.drawing.force_clear()
-        self._render_current()
 
-    # ---------------------------
-    # UI helpers
-    # ---------------------------
+        self.kana_label.setText(self._current.kana)
+        self.romaji_label.setText(self._current.romaji or "")
+        self.q_status.setText("Watch the correct drawing, then copy it and click Submit.")
 
-    def _set_idle(self) -> None:
-        self.kana_label.setText("—")
-        self.romaji_label.setText("")
-        self.status_label.setText("Press Start to begin.")
+        # Load + play canonical drawing (must exist in DB for this card)
+        d = self._current.drawing
+        if d is not None and d.strokes:
+            self.canonical_display.set_strokes(d.strokes)
+            self.canonical_display.restart()
+        else:
+            # Still let them draw, but warn canonical is missing
+            self.canonical_display.set_strokes([])
+            self.canonical_display.stop()
+            self.q_status.setText("No canonical drawing found for this card. Draw anyway and Submit.")
 
-    def _set_done(self) -> None:
-        self.kana_label.setText("✓")
-        self.romaji_label.setText("")
-        self.status_label.setText("No more learnable kana cards.")
+        self.stack.setCurrentWidget(self.q_page)
 
-    def _render_current(self) -> None:
-        assert self._current is not None
-        # adjust attribute names to your KanaCard API
-        self.kana_label.setText(getattr(self._current, "kana", ""))
-        self.romaji_label.setText(getattr(self._current, "romaji", "") or "")
-        self.status_label.setText("Draw it, then click Submit.")
+    # -----------------------
+    # Canonical controls
+    # -----------------------
 
-    # ---------------------------
+    def _replay_canonical(self) -> None:
+        # Just restart the animation if strokes are present
+        try:
+            self.canonical_display.restart()
+        except Exception:
+            # If no strokes loaded, do nothing (or you could message)
+            pass
+
+    # -----------------------
     # Drawing callbacks
-    # ---------------------------
+    # -----------------------
 
     def _on_cleared(self) -> None:
         if self._current is None:
             return
-        self._submitted_for_current = False
-        self.status_label.setText("Cleared. Draw it again, then Submit.")
+        self._reset_status_style()
+        self.q_status.setText("Cleared. Try again, then Submit.")
 
     def _on_submitted(self, strokes: list[list[float]]) -> None:
-        """
-        Called ONLY when the user submits a drawing.
-        This is the "gate": we do not advance until this happens.
-        """
         if self._current is None:
             return
-
         if not strokes:
-            self.status_label.setText("No strokes captured — draw something first.")
+            self._reset_status_style()
+            self.q_status.setText("No strokes captured — draw something first.")
             return
 
-        self._submitted_for_current = True
+        glyph = self._current.kana
+        g = grade_strokes(strokes, glyph)
 
-        # Here is where you do something meaningful with (card, strokes):
-        # - score handwriting
-        # - save drawing to DB
-        # - mark card studied
-        #
-        # For now we just print a useful summary.
-        print(
-            f"Submitted for kana={getattr(self._current, 'kana', '')!r}, "
-            f"romaji={getattr(self._current, 'romaji', '')!r}, "
-            f"strokes={len(strokes)}"
-        )
+        # Styling for feedback
+        font = self.q_status.font()
+        font.setPointSize(24)
+        font.setBold(True)
+        self.q_status.setFont(font)
 
-        
-        self._current.drawing = Drawing.create(strokes, self._current.kana)
-        self._current.card.study_id = 1
-        self._current.sync()
-        
-        # Advance to next card ONLY after successful submission
-        self.next_card()
+        pal = self.q_status.palette()
+
+        # IMPORTANT: mapping
+        # 0 = correct (green), 1 = close (yellow), 2 = incorrect (red)
+        if g == 0:
+            pal.setColor(QPalette.ColorRole.WindowText, QColorConstants.Green)
+            self.q_status.setText("Correct — moving on!")
+            self.q_status.setPalette(pal)
+
+            # Mark learned (do NOT touch drawing_id; canonical stays canonical)
+            self._current.card.study_id = 1
+            self._current.sync()  # uncomment if you want immediate persistence
+
+            self.next_card()
+            return
+
+        if g == 1:
+            pal.setColor(QPalette.ColorRole.WindowText, QColorConstants.Yellow)
+            self.q_status.setText("Close — try again.")
+        else:
+            pal.setColor(QPalette.ColorRole.WindowText, QColorConstants.Red)
+            self.q_status.setText("Incorrect — try again.")
+
+        self.q_status.setPalette(pal)
+
+        # Force retry: clear user strokes; stay on same card
+        self.drawing.force_clear()
+
+
+# Backwards compat with your older name
+LearnKanaWidget = LearnKanaPage

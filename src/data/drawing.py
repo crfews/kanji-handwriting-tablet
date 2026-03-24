@@ -142,8 +142,9 @@ class Drawing:
 
 
     @classmethod
-    def by_glyph(cls, g: str, con: sqla.Connection) -> dict[int, Drawing] | None:
-        if cls._glyph_cache_searched_db[g]:
+    def by_glyph(cls, g: str, con: sqla.Connection | None = None) -> dict[int, Drawing] | None:
+        obj = cls._glyph_cache_searched_db.get(g)
+        if obj is not None and obj:
             return cls._glyph_cache.get(g)
 
         with maybe_connection(con) as con:
@@ -176,6 +177,37 @@ class Drawing:
         
 
 
+    @classmethod
+    def by_strokes_fuzzy(cls,
+                         s: list[list[float]],
+                         top_n: int,
+                         point_count: int=100,
+                         size: int = 100) -> list[Drawing]:
+        extant = cls.by_stroke_count(len(s))
+
+        if extant is None or len(extant) == 0:
+            return []
+
+
+        ps = du.process_strokes(s,point_count=point_count,size=size)
+        
+        closest: dict[float, Drawing] = {}
+        for _, v in extant.items():
+            value = du.stroke_diff(v.strokes, ps, size=size, point_count=point_count)
+            if len(closest) < top_n:
+                while value in closest:
+                    value += 0.001
+                closest[value] = v
+
+            if value < max(closest):
+                m = max(closest)
+                del closest[m]
+                while value in closest:
+                    value += 0.001
+                closest[value] = v
+        
+        return [closest[k] for k in sorted(closest.keys())]
+    
     @classmethod
     def by_strokes(cls, s: list[list[float]]) -> Drawing | None:
         extant = cls.by_stroke_count(len(s))

@@ -62,6 +62,14 @@ def _update_card(c: Card, new_inc: int, con: None | sqla.Connection) -> date:
 # Public Function Definitions
 ################################################################################
 
+def review_card_bin(c: Card, grade: int, con: None | sqla.Connection = None) -> date:
+    if grade == 0:
+        return review_card_good(c, con)
+    elif grade == 1:
+        return review_card_ok(c,con)
+    else:
+        return review_card_bad(c,con)
+    
 
 
 def review_card_good(c: Card, con: None | sqla.Connection = None) -> date:

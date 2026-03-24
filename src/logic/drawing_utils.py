@@ -2,6 +2,8 @@ import numpy as np
 from scipy.spatial import procrustes
 from numpy.typing import NDArray
 
+
+
 def interpolate_line(line: list[float], point_count: int) -> NDArray[np.float32]:
     """Takes an alternating list of x and y values and returns a vector of
     2 * point_count values representing a stretched or compacted equivalent
@@ -18,6 +20,8 @@ def interpolate_line(line: list[float], point_count: int) -> NDArray[np.float32]
 
     return np.stack([x,y],axis=1,dtype=np.float32)
 
+
+
 def process_strokes(strokes: list[list[float]], point_count: int=100, size=100) -> NDArray[np.float32]:
     """Maps a sequence of lines onto a 'size' X 'size' 2D space where each line is comprised
     of point_count number of points or point_count * 2 x/y values."""
@@ -26,6 +30,28 @@ def process_strokes(strokes: list[list[float]], point_count: int=100, size=100) 
     maxs = normalized.max(axis=(0,1))
     normalized = (normalized - mins) / (maxs - mins) * size
     return normalized.reshape(normalized.shape[0], -1)
+    #return normalized.reshape(-1)
+
+
+
+def stroke_diff(s1: list[list[float]] | NDArray,
+                s2: list[list[float]] | NDArray,
+                point_count=100,
+                size=100) -> float:
+    '''Finds the absoulte difference between every x and y value of two drawings
+    and returns the mean'''
+    
+    # Normalize the collections of lines to be of similar shape
+    if isinstance(s1, list):
+        s1 = process_strokes(s1,point_count=point_count,size=size)
+    if isinstance(s2, list):
+        s2 = process_strokes(s2,point_count=point_count,size=size)
+    assert s1.shape == s2.shape
+
+    dif = s1 - s2
+    dif = np.abs(dif)
+    return float(np.mean(dif))
+
 
 
 def compare_drawings(
@@ -66,6 +92,8 @@ def compare_drawings(
 
     return float(mean_disparity) + stroke_count_penalty
     
+
+
 def bin_drawing_respose(
     drawing1: list[list[float]],
     drawing2: list[list[float]],
