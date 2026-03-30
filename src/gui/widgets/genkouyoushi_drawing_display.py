@@ -3,11 +3,14 @@ from __future__ import annotations
 import math
 from typing import Optional
 
-from PyQt6.QtCore import pyqtSlot
+from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtWidgets import (
     QFrame,
     QGridLayout,
+    QHBoxLayout,
+    QLabel,
     QPushButton,
+    QSlider,
     QVBoxLayout,
     QWidget,
 )
@@ -55,6 +58,7 @@ class GenkouyoushiDrawingDisplay(QFrame):
         self._frames: list[QFrame] = []
         self._displays: list[DrawingDisplay] = []
         self._glyphs: list[str] = []
+        self._progress_value: int = 0
 
         # Outer layout
         root = QGridLayout(self)
@@ -69,14 +73,27 @@ class GenkouyoushiDrawingDisplay(QFrame):
         self._grid_container.setLayout(self._grid)
         root.addWidget(self._grid_container, 0, 0, 1, 2)
 
+        # Representation slider
+        rep_row = QHBoxLayout()
+        rep_row.addWidget(QLabel("Animation Slider", self))
+        self._variant_slider = QSlider(self)
+        self._variant_slider.setOrientation(Qt.Orientation.Horizontal)
+        self._variant_slider.setRange(0, 100)
+        self._variant_slider.setEnabled(True)
+        self._variant_slider.valueChanged.connect(self._on_variant_changed)
+        rep_row.addWidget(self._variant_slider, 1)
+        self._variant_label = QLabel("0%", self)
+        rep_row.addWidget(self._variant_label)
+        root.addLayout(rep_row, 1, 0, 1, 2)
+
         # Buttons
         self._restart_btn = QPushButton("Restart animation", self)
         self._restart_btn.clicked.connect(self.restart)
-        root.addWidget(self._restart_btn, 1, 0)
+        root.addWidget(self._restart_btn, 2, 0)
 
         self._redraw_btn = QPushButton("Redraw (reload from DB)", self)
         self._redraw_btn.clicked.connect(self.redraw)
-        root.addWidget(self._redraw_btn, 1, 1)
+        root.addWidget(self._redraw_btn, 2, 1)
 
         # Build initial UI
         self.set_text(text)
@@ -90,6 +107,7 @@ class GenkouyoushiDrawingDisplay(QFrame):
         self._text = text or ""
         self._glyphs = list(self._text)
         self._rebuild_grid()
+        self._sync_variant_slider()
         self.redraw()  # load strokes for current glyphs
 
     def set_row_cap(self, n: int) -> None:
@@ -99,7 +117,39 @@ class GenkouyoushiDrawingDisplay(QFrame):
         self._row_cap = int(n)
         self._rebuild_grid()
         # keep existing glyphs, reload strokes into the new displays
+        self._sync_variant_slider()
         self.redraw()
+
+    def set_progress_value(self, value: int) -> None:
+        """Set scrubber progress in percent [0..100]."""
+        self._progress_value = max(0, min(100, int(value)))
+        if self._variant_slider.value() != self._progress_value:
+            self._variant_slider.blockSignals(True)
+            self._variant_slider.setValue(self._progress_value)
+            self._variant_slider.blockSignals(False)
+        self._sync_variant_label()
+        self._apply_progress()
+
+    def _sync_variant_slider(self) -> None:
+        self._variant_slider.blockSignals(True)
+        self._variant_slider.setRange(0, 100)
+        self._variant_slider.setValue(self._progress_value)
+        self._variant_slider.blockSignals(False)
+        self._variant_slider.setEnabled(True)
+        self._sync_variant_label()
+
+    def _sync_variant_label(self) -> None:
+        self._variant_label.setText(f"{self._progress_value}%")
+
+    def _apply_progress(self) -> None:
+        p = self._progress_value / 100.0
+        for disp in self._displays:
+            disp.set_progress(p)
+
+    def _on_variant_changed(self, value: int) -> None:
+        self._progress_value = max(0, min(100, int(value)))
+        self._sync_variant_label()
+        self._apply_progress()
 
     @pyqtSlot()
     def restart(self) -> None:
@@ -130,19 +180,10 @@ class GenkouyoushiDrawingDisplay(QFrame):
 
             if strokes:
                 disp.set_strokes(strokes)
-                try:
-                    disp.restart()
-                except Exception:
-                    pass
+                disp.set_progress(self._progress_value / 100.0)
             else:
                 # No drawing found: clear the display
                 disp.stop()
-                disp.set_strokes([])  # NOTE: DrawingDisplay.set_strokes([]) would fail validation
-                # So instead, just clear by resizing backing store via manual restart guard:
-                # We'll do a safe clear by calling stop + forcing a blank image indirectly:
-                # easiest: create a fresh blank by calling restart guarded in try; but restart fails if no strokes.
-                # So do nothing beyond stop; it stays blank after initial.
-                # If you want a guaranteed blank, we can add a clear() method to DrawingDisplay.
 
     # ---------------------------------------------------------------------
     # Internal: grid rebuild

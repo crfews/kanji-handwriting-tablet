@@ -143,13 +143,69 @@ class DrawingDisplay(QWidget):
 
 
 
+    def clear(self) -> None:
+        self.stop()
+        self._raw_strokes = None
+        self._point_strokes = []
+        self._current_stroke_index = 0
+        self._current_stroke_point_index = 1
+        self._current_stroke_point_count = 0
+        self._image.fill(self.palette().color(self.backgroundRole()))
+        self.update()
+
     def restart(self) -> None:
+        if not self._point_strokes:
+            self.clear()
+            return
+
         self._image.fill(self.palette().color(self.backgroundRole()))
         self._current_stroke_index = 0
         self._current_stroke_point_index = 1
         self._current_stroke_point_count = len(self._point_strokes[self._current_stroke_index])
         self.update()
         self.resume()
+
+    def _segment_count(self) -> int:
+        total = 0
+        for s in self._point_strokes:
+            if len(s) >= 2:
+                total += (len(s) - 1)
+        return total
+
+    def set_progress(self, progress: float) -> None:
+        """
+        Render drawing at a specific progress in [0.0, 1.0].
+        This acts as a scrubber over the current stroke sequence.
+        """
+        if not self._point_strokes:
+            return
+        p = max(0.0, min(1.0, float(progress)))
+        total_segments = self._segment_count()
+        if total_segments <= 0:
+            return
+
+        self.stop()
+        segments_to_draw = int(round(p * total_segments))
+        segments_left = segments_to_draw
+
+        self._image.fill(self.palette().color(self.backgroundRole()))
+        painter = QPainter(self._image)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setPen(self._pen)
+
+        for stroke in self._point_strokes:
+            if len(stroke) < 2 or segments_left <= 0:
+                continue
+            max_segments_in_stroke = len(stroke) - 1
+            draw_n = min(max_segments_in_stroke, segments_left)
+            for i in range(draw_n):
+                painter.drawLine(stroke[i], stroke[i + 1])
+            segments_left -= draw_n
+            if segments_left <= 0:
+                break
+
+        painter.end()
+        self.update()
 
 
     def set_strokes(self, strokes: list[list[float]]):

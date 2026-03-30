@@ -183,6 +183,7 @@ class LearnPhrasePage(QtWidgets.QWidget):
 
         self.drawing.force_clear()
         self.canonical.set_text("")
+        self.canonical.set_progress_value(0)
 
         self.kanji_phrase_label.setText("")
         self.kana_phrase_label.setText("")
@@ -234,6 +235,7 @@ class LearnPhrasePage(QtWidgets.QWidget):
         # Configure canonical + input grids to match target length
         self.canonical.set_row_cap(self._row_cap)
         self.canonical.set_text(self._target)
+        self.canonical.set_progress_value(0)
 
         self.drawing.set_row_cap(self._row_cap)
         self.drawing.set_count(len(self._target))
@@ -315,5 +317,6 @@ class LearnPhrasePage(QtWidgets.QWidget):
 
         # Force retry: clear all (simple + consistent with your kanji flow)
         self.drawing.force_clear()
+
 
 

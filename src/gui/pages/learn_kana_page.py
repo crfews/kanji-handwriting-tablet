@@ -75,6 +75,17 @@ class LearnKanaPage(QtWidgets.QWidget):
         self.canonical_display = DrawingDisplay(parent=left_box, width=320, height=320)
         left_layout.addWidget(self.canonical_display, 1)
 
+        rep_row = QtWidgets.QHBoxLayout()
+        rep_row.addWidget(QtWidgets.QLabel("Animation Slider", left_box))
+        self.representation_slider = QtWidgets.QSlider(Qt.Orientation.Horizontal, left_box)
+        self.representation_slider.setRange(0, 100)
+        self.representation_slider.setEnabled(True)
+        self.representation_slider.valueChanged.connect(self._on_representation_changed)
+        rep_row.addWidget(self.representation_slider, 1)
+        self.representation_label = QtWidgets.QLabel("0%", left_box)
+        rep_row.addWidget(self.representation_label)
+        left_layout.addLayout(rep_row)
+
         self.replay_btn = QtWidgets.QPushButton("Replay animation", left_box)
         self.replay_btn.clicked.connect(self._replay_canonical)
         left_layout.addWidget(self.replay_btn)
@@ -158,6 +169,10 @@ class LearnKanaPage(QtWidgets.QWidget):
         self.drawing.force_clear()
         self.canonical_display.set_strokes([])  # clear display
         self.canonical_display.stop()
+        self.representation_slider.blockSignals(True)
+        self.representation_slider.setValue(0)
+        self.representation_slider.blockSignals(False)
+        self.representation_label.setText("0%")
 
         self.kana_label.setText("—")
         self.romaji_label.setText("")
@@ -185,12 +200,17 @@ class LearnKanaPage(QtWidgets.QWidget):
 
         # Load + play canonical drawing (must exist in DB for this card)
         d = self._current.drawing
+        self.representation_slider.blockSignals(True)
+        self.representation_slider.setValue(0)
+        self.representation_slider.blockSignals(False)
+        self.representation_label.setText("0%")
+
         if d is not None and d.strokes:
             self.canonical_display.set_strokes(d.strokes)
+            self.canonical_display.set_progress(0.0)
             self.canonical_display.restart()
         else:
             # Still let them draw, but warn canonical is missing
-            self.canonical_display.set_strokes([])
             self.canonical_display.stop()
             self.q_status.setText("No canonical drawing found for this card. Draw anyway and Submit.")
 
@@ -207,6 +227,11 @@ class LearnKanaPage(QtWidgets.QWidget):
         except Exception:
             # If no strokes loaded, do nothing (or you could message)
             pass
+
+    def _on_representation_changed(self, value: int) -> None:
+        pct = max(0, min(100, int(value)))
+        self.representation_label.setText(f"{pct}%")
+        self.canonical_display.set_progress(pct / 100.0)
 
     # -----------------------
     # Drawing callbacks
