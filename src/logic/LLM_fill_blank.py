@@ -214,27 +214,27 @@ def _request_openai_exercise(
     )
 
     prompt = f"""
-You are generating one beginner-friendly Japanese fill-in-the-blank exercise.
+        You are generating one beginner-friendly Japanese fill-in-the-blank exercise.
 
-Rules:
-- The missing answer must be exactly this one character: {answer}
-- Use ONLY Japanese characters from this database-derived whitelist: {''.join(whitelist)}
-- You may also use simple punctuation like 。、！？ and spaces
-- Keep the sentence short and natural (about 4 to 12 characters)
-- No romaji and no English in the sentence
-- The sentence must contain the answer character
+        Rules:
+        - The missing answer must be exactly this one character: {answer}
+        - Use ONLY Japanese characters from this database-derived whitelist: {''.join(whitelist)}
+        - You may also use simple punctuation like 。、！？ and spaces
+        - Keep the sentence short and natural (about 4 to 12 characters)
+        - No romaji and no English in the sentence
+        - The sentence must contain the answer character
 
-Database examples:
-{example_block}
+        Database examples:
+        {example_block}
 
-Return ONLY valid JSON with this schema:
-{{
-  "sentence": "short Japanese sentence",
-  "answer": "{answer}",
-  "english_meaning": "brief English meaning of the sentence",
-  "hint": "short hint for the learner"
-}}
-""".strip()
+        Required:
+        {{
+        "sentence": "short Japanese sentence",
+        "answer": "{answer}",
+        "english_meaning": "brief English meaning of the sentence",
+        "hint": "short hint for the learner"
+        }}
+    """.strip()
 
     client = OpenAI(api_key=api_key)
     response = client.chat.completions.create(
