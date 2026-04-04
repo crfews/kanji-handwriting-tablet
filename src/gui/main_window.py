@@ -14,6 +14,7 @@ from gui.pages.review_kana_page import ReviewKanaPage
 from gui.pages.review_kanji_page import ReviewKanjiPage
 from gui.pages.learn_phrase_page import LearnPhrasePage
 from gui.pages.review_phrase_page import ReviewPhrasePage
+from gui.pages.fill_blank_page import FillBlankPracticePage
 
 
 class MainWindow(QMainWindow):
@@ -52,6 +53,9 @@ class MainWindow(QMainWindow):
         self.home_page.btn_learn_phrase.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.learn_phrase_page)
         )
+        self.home_page.btn_fill_blank.clicked.connect(
+            lambda: self.stack.setCurrentWidget(self.fill_blank_page)
+        )
         self.home_page.btn_import.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.import_page)
         )
@@ -81,6 +85,7 @@ class MainWindow(QMainWindow):
         self.learn_kana_page = LearnKanaWidget(self)
         self.learn_kanji_page = LearnKanjiWidget(self)
         self.learn_phrase_page = LearnPhrasePage(self)
+        self.fill_blank_page = FillBlankPracticePage(self)
         #self.review_scheduler = ReviewScheduler(self)
         self.review_kana_page = ReviewKanaPage(self)
         self.review_kanji_page = ReviewKanjiPage(self)
@@ -99,6 +104,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.learn_kana_page)
         self.stack.addWidget(self.learn_kanji_page)
         self.stack.addWidget(self.learn_phrase_page)
+        self.stack.addWidget(self.fill_blank_page)
         #self.stack.addWidget(self.review_scheduler)
         self.stack.addWidget(self.review_kana_page)
         self.stack.addWidget(self.review_kanji_page)
@@ -120,6 +126,7 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('Learn Kana', self.learn_kana_page)
         self.add_page_to_menu('Learn Kanji', self.learn_kanji_page)
         self.add_page_to_menu('Learn Phrase', self.learn_phrase_page)
+        self.add_page_to_menu('Complete the Sentence', self.fill_blank_page)
         #self.add_page_to_menu('Review Scheduler', self.review_scheduler)
         self.add_page_to_menu('Review Kana', self.review_kana_page)
         self.add_page_to_menu('Review Kanji', self.review_kanji_page)

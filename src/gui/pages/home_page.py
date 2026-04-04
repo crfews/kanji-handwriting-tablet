@@ -55,6 +55,7 @@ class HomePage(QWidget):
         self.btn_learn_kana = QPushButton("Learn Kana")
         self.btn_learn_kanji = QPushButton("Learn Kanji")
         self.btn_learn_phrase = QPushButton("Learn Phrase")
+        self.btn_fill_blank = QPushButton("Advanced: Complete the Sentence")
 
         # Add horizontal buttons to their learn layout
         cards_layout_learn.addWidget(self.btn_learn_kana)
@@ -75,6 +76,7 @@ class HomePage(QWidget):
         layout.addSpacing(20)
         layout.addWidget(horizontal_review_buttons_widget)
         layout.addWidget(horizontal_learn_buttons_widget)
+        layout.addWidget(self.btn_fill_blank)
         layout.addWidget(self.btn_handwriting)
         # layout.addWidget(self.btn_type)
         layout.addWidget(self.btn_import)
