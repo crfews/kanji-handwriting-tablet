@@ -30,18 +30,27 @@ class HomePage(QWidget):
 
         # Title
         title = QLabel("Kanji Handwriting Tool")
-        title.setStyleSheet("font-size: 40px; font-weight: bold; margin-bottom: 30px;")
+        title.setStyleSheet("font-size: 40px; font-weight: bold; margin-bottom: 30px; color: #535a3b;")
         title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         cards_layout_review = QHBoxLayout()
         cards_layout_learn = QHBoxLayout()
 
-
+        
+        bttn_design = """QPushButton {
+                background-color: #cedcc3;
+                color: #535a3b;
+                border-radius: 5px;
+                border: 2px solid #a7b99e;
+                padding: 5px;
+                font-size: 10px;
+            }
+            """
         # Create the 3 horizontal buttons for the review pages
         self.btn_review_kana = QPushButton("Review Kana")
         self.btn_review_kanji = QPushButton("Review Kanji")
         self.btn_review_phrase = QPushButton("Review Phrase")
-        
+         
         # Add horizontal buttons to their review layout
         cards_layout_review.addWidget(self.btn_review_kana)
         cards_layout_review.addWidget(self.btn_review_kanji)
@@ -71,7 +80,18 @@ class HomePage(QWidget):
         # self.btn_type = QPushButton("Cards Type Manager")
         self.btn_import = QPushButton("Import")
         
-
+        # Button StyleSheets
+        self.btn_review_kana.setStyleSheet(bttn_design)
+        self.btn_review_kanji.setStyleSheet(bttn_design)
+        self.btn_review_phrase.setStyleSheet(bttn_design)
+        self.btn_learn_kana.setStyleSheet(bttn_design)
+        self.btn_learn_kanji.setStyleSheet(bttn_design)
+        self.btn_learn_phrase.setStyleSheet(bttn_design)
+        self.btn_fill_blank.setStyleSheet(bttn_design)
+        self.btn_handwriting.setStyleSheet(bttn_design)
+        self.btn_import.setStyleSheet(bttn_design)
+        
+        # Layout Design
         layout.addWidget(title)
         layout.addSpacing(20)
         layout.addWidget(horizontal_review_buttons_widget)
