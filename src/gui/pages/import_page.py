@@ -50,6 +50,7 @@ class ImportPage(QWidget):
     def _on_clear(self) -> None:
         self._path = None
         self._path_lbl.setText("No file loaded")
+        self._path_lbl.setStyleSheet("color: #535a3b")
         self._status_lbl.setText("")
         self._model.clear()
         self._type_col_cb.clear()
