@@ -1,4 +1,4 @@
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtGui import QAction, QIcon, QActionGroup
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QWidget, QMenu, QLabel, QHBoxLayout, QVBoxLayout, QPushButton
 from PyQt6.QtCore import Qt
 from gui.pages.handwriting_manager import HandwritingManager
@@ -16,7 +16,7 @@ from gui.pages.review_kanji_page import ReviewKanjiPage
 from gui.pages.learn_phrase_page import LearnPhrasePage
 from gui.pages.review_phrase_page import ReviewPhrasePage
 from gui.pages.fill_blank_page import FillBlankPracticePage
-
+from gui.theme_manager import ThemeManager, THEMES
 
 class MainWindow(QMainWindow):
     """The class acting as the root widget for the whole application"""
@@ -62,48 +62,41 @@ class MainWindow(QMainWindow):
         )
         
 
+    def setup_theme_menu(self):
+        self.theme_submenu = self.settings_menu.addMenu("Themes")
+        self.theme_action_group = QActionGroup(self)
+        self.theme_action_group.setExclusive(True)
 
-    def __init__(self):
+        self.theme_actions = {}
+
+        for theme_name in THEMES.keys():
+            action = QAction(theme_name.replace("_", " ").title(), self)
+            action.setCheckable(True)
+            action.triggered.connect(
+                lambda checked, name=theme_name: self.theme_manager.apply_theme(name)
+            )
+            assert self.theme_submenu
+            self.theme_submenu.addAction(action)
+            self.theme_action_group.addAction(action)
+            self.theme_actions[theme_name] = action
+
+        current_theme = self.theme_manager.load_saved_theme()
+        if current_theme in self.theme_actions:
+            self.theme_actions[current_theme].setChecked(True)
+        
+    def __init__(self, theme_manager: ThemeManager ):
         """Constructor for the main window."""
 
         # Setup persistant widgets that will last for the duration of the
         # application
         super().__init__()
 
+        self.theme_manager = theme_manager
+        
         self.setWindowTitle('Kanji Learner\'s App') 
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #eff7d3;
-            }
-                           """) 
-        
-        # Add the global application menubar
-        #self.menu_bar = self.menuBar()
-        #assert self.menu_bar is not None
-        #self.menu_bar.setStyleSheet("""
-        #    QMenuBar {
-        #        background-color: #eff7d3;
-        #    }
-        #""")
-        #self.pages_menu = self.menu_bar.addMenu("&Pages")
-        
-        #self.pages_menu.setStyleSheet("""
-        #    QMenuBar:item {
-        #        background-color: #eff7d3;
-        #    }
-        #    QMenu {
-        #        background-color: #cedcc3;
-        #    }
-        #                              """)  
-##########################################################
 
         # CUSTOM MENU BAR #
         self.MenuBar = QWidget()
-        self.MenuBar.setStyleSheet("""
-            QWidget {
-                background-color: #eff7d3;
-            }
-        """)
         
         MenuBarLayout = QHBoxLayout(self.MenuBar)
         MenuBarLayout.setContentsMargins(5,5,5,5)
@@ -112,39 +105,7 @@ class MainWindow(QMainWindow):
         # PAGE LAYOUT #
         self.page_btn = QPushButton(QIcon("assests/lines.png"),"")
         
-        # only image/icon is shown
-        self.page_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-            }
-            QPushButton:menu-indicator {
-                image: none;
-            }
-                                    """)
-        
         self.page_menu = QMenu()
-        
-        # dropdown menu design
-        self.page_menu.setStyleSheet("""
-            QMenu::item {
-                
-                color: #535a3b;
-            }
-            QMenu::item:selected {
-                background-color: #a7b99e;
-                color: #cedcc3;
-            }
-            QMenu {
-                background-color: #cedcc3;
-                border: 1px solid black;
-                padding: 5px 0px;
-            }
-                                     """)
-        #self.page_menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground,True)
-        #self.page_menu.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
-        #self.page_menu.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
-        #self.page_menu.setWindowOpacity(0.99)
         
         self.page_btn.setMenu(self.page_menu)
         
@@ -155,22 +116,14 @@ class MainWindow(QMainWindow):
         # SETTINGS LAYOUT #
         self.settings_btn = QPushButton(QIcon("assests/settings.png"), "")
         
-        # only image/icon shown
-        self.settings_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-            }
-            QPushButton::menu-indicator {
-                image: none;
-            }
-                                    """)
-        
         self.settings_menu = QMenu()
         hard_review = QAction("Harder Review", self)
         hard_review.setCheckable(True)
         
         self.settings_menu.addAction(hard_review)
         self.settings_btn.setMenu(self.settings_menu)
+
+        self.setup_theme_menu()
         
         MenuBarLayout.addWidget(self.settings_btn)
 
@@ -246,3 +199,40 @@ class MainWindow(QMainWindow):
         self.add_page_to_menu('Review Kana', self.review_kana_page)
         self.add_page_to_menu('Review Kanji', self.review_kanji_page)
         self.add_page_to_menu('Review Phrase', self.review_phrase_page)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        # Add the global application menubar
+        #self.menu_bar = self.menuBar()
+        #assert self.menu_bar is not None
+        #self.menu_bar.setStyleSheet("""
+        #    QMenuBar {
+        #        background-color: #eff7d3;
+        #    }
+        #""")
+        #self.pages_menu = self.menu_bar.addMenu("&Pages")
+        
+        #self.pages_menu.setStyleSheet("""
+        #    QMenuBar:item {
+        #        background-color: #eff7d3;
+        #    }
+        #    QMenu {
+        #        background-color: #cedcc3;
+        #    }
+        #                              """)  
+##########################################################
