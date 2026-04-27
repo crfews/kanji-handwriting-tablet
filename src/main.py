@@ -12,5 +12,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     tm = ThemeManager(app)
     w = MainWindow(tm)
-    w.show()
+    #w.show()
+    w.showFullScreen()
     app.exec()
