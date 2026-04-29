@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
-    QScrollArea,
 )
 from PyQt6.QtCore import Qt
 
@@ -34,14 +33,11 @@ class MainWindow(QMainWindow):
         self.theme_manager = theme_manager
         self.setWindowTitle("Kanji Learner's App")
 
-        # If True, every navigation creates a fresh page and destroys the old one.
-        # If False, pages are created lazily once and then reused.
-        self.destroy_pages_on_navigation = True
-
-        # Stores constructed page widgets when destroy_pages_on_navigation is False.
+        # Stores constructed page widgets.
         self.pages = {}
 
-        # Stores page constructors. Widgets are not created here.
+        # Stores page constructors.
+        # Widgets are NOT created here.
         self.page_factories = {
             "Home": HomePage,
             "Learn Kana": LearnKanaWidget,
@@ -53,110 +49,137 @@ class MainWindow(QMainWindow):
             "Review Phrase": ReviewPhrasePage,
         }
 
-        # ------------------------------------------------------------------
-        # Custom menu bar
-        # ------------------------------------------------------------------
+        # CUSTOM MENU BAR
         self.MenuBar = QWidget()
 
         menu_bar_layout = QHBoxLayout(self.MenuBar)
         menu_bar_layout.setContentsMargins(5, 5, 5, 5)
 
-        # Page menu button
+        # PAGE MENU
         self.page_btn = QPushButton(QIcon("assests/lines.png"), "")
+
         self.page_menu = QMenu()
         self.page_btn.setMenu(self.page_menu)
+
         menu_bar_layout.addWidget(self.page_btn)
 
-        # Keeps settings button on the right.
         menu_bar_layout.addStretch()
 
-        # Settings button
+        # SETTINGS MENU
         self.settings_btn = QPushButton(QIcon("assests/settings.png"), "")
+
         self.settings_menu = QMenu()
         self.settings_btn.setMenu(self.settings_menu)
+
         self.setup_theme_menu()
+
         menu_bar_layout.addWidget(self.settings_btn)
 
-        # ------------------------------------------------------------------
-        # Page stack inside global scroll area
-        # ------------------------------------------------------------------
+        # STACK
         self.stack = QStackedWidget()
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setWidget(self.stack)
 
         main_container = QWidget()
         main_layout = QVBoxLayout(main_container)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         main_layout.addWidget(self.MenuBar)
-        main_layout.addWidget(self.scroll_area)
+        main_layout.addWidget(self.stack)
 
         self.setCentralWidget(main_container)
 
-        # Add menu actions without constructing pages.
+        # Add menu entries, but do not create pages yet.
         for page_name in self.page_factories:
             self.add_page_to_menu(page_name)
 
-        # Start on Home.
+        # Lazily create and show home.
         self.navigate_to("Home")
 
     def add_page_to_menu(self, page_name: str):
-        """Add a page action to the page menu."""
         page_action = QAction(page_name, self)
         page_action.triggered.connect(partial(self.navigate_to, page_name))
 
         assert self.page_menu is not None
         self.page_menu.addAction(page_action)
 
+    # def navigate_to(self, page_name: str):
+    #     """Create a page on first navigation, then switch to it."""
+
+    #     if page_name not in self.page_factories:
+    #         raise KeyError(f"No page factory registered for: {page_name}")
+
+    #     if page_name not in self.pages:
+    #         page_class = self.page_factories[page_name]
+    #         page_widget = page_class(self)
+
+    #         self.pages[page_name] = page_widget
+    #         self.stack.addWidget(page_widget)
+
+    #         if page_name == "Home":
+    #             self.connect_home_page_buttons()
+
+    #     self.stack.setCurrentWidget(self.pages[page_name])
+
     def navigate_to(self, page_name: str):
-        """Navigate to a page, creating it lazily as needed."""
         if page_name not in self.page_factories:
             raise KeyError(f"No page factory registered for: {page_name}")
 
-        if self.destroy_pages_on_navigation:
-            self._navigate_to_fresh_page(page_name)
-        else:
-            self._navigate_to_cached_page(page_name)
-
-        # Reset scroll position when changing pages.
-        self.scroll_area.verticalScrollBar().setValue(0)
-        self.scroll_area.horizontalScrollBar().setValue(0)
-
-    def _navigate_to_cached_page(self, page_name: str):
-        """Create each page once, then reuse it."""
-        if page_name not in self.pages:
-            page_widget = self._create_page(page_name)
-            self.pages[page_name] = page_widget
-            self.stack.addWidget(page_widget)
-
-        self.stack.setCurrentWidget(self.pages[page_name])
-
-    def _navigate_to_fresh_page(self, page_name: str):
-        """Create a fresh page and destroy the previously visible page."""
         old_page = self.stack.currentWidget()
 
-        new_page = self._create_page(page_name)
+        # Create the new page every time
+        page_class = self.page_factories[page_name]
+        new_page = page_class(self)
+
         self.stack.addWidget(new_page)
         self.stack.setCurrentWidget(new_page)
 
+        if page_name == "Home":
+            self.pages["Home"] = new_page
+            self.connect_home_page_buttons()
+
+        # Delete the old page after switching
         if old_page is not None:
+            old_name = None
+            for name, widget in list(self.pages.items()):
+                if widget is old_page:
+                    old_name = name
+                    break
+
+            if old_name is not None:
+                del self.pages[old_name]
+
             self.stack.removeWidget(old_page)
             old_page.deleteLater()
+    
+    # def connect_home_page_buttons(self):
+    #     """Connect home page buttons to lazily-created pages."""
 
-    def _create_page(self, page_name: str):
-        """Construct a page by name and connect page-specific behavior."""
-        page_class = self.page_factories[page_name]
-        page_widget = page_class(self)
+    #     home_page = self.pages["Home"]
 
-        if page_name == "Home":
-            self.connect_home_page_buttons(page_widget)
+    #     home_page.btn_review_kana.clicked.connect(
+    #         partial(self.navigate_to, "Review Kana")
+    #     )
+    #     home_page.btn_review_kanji.clicked.connect(
+    #         partial(self.navigate_to, "Review Kanji")
+    #     )
+    #     home_page.btn_review_phrase.clicked.connect(
+    #         partial(self.navigate_to, "Review Phrase")
+    #     )
+    #     home_page.btn_learn_kana.clicked.connect(
+    #         partial(self.navigate_to, "Learn Kana")
+    #     )
+    #     home_page.btn_learn_kanji.clicked.connect(
+    #         partial(self.navigate_to, "Learn Kanji")
+    #     )
+    #     home_page.btn_learn_phrase.clicked.connect(
+    #         partial(self.navigate_to, "Learn Phrase")
+    #     )
+    #     home_page.btn_fill_blank.clicked.connect(
+    #         partial(self.navigate_to, "Complete the Sentence")
+    #     )
 
-        return page_widget
-
-    def connect_home_page_buttons(self, home_page: HomePage):
-        """Connect home page buttons to lazily-created pages."""
+    def connect_home_page_buttons(self):
+        home_page = self.stack.currentWidget()
+        assert home_page
         home_page.btn_review_kana.clicked.connect(
             partial(self.navigate_to, "Review Kana")
         )
@@ -178,7 +201,7 @@ class MainWindow(QMainWindow):
         home_page.btn_fill_blank.clicked.connect(
             partial(self.navigate_to, "Complete the Sentence")
         )
-
+    
     def setup_theme_menu(self):
         self.theme_submenu = self.settings_menu.addMenu("Themes")
         self.theme_action_group = QActionGroup(self)
