@@ -49,7 +49,8 @@ class LearnKanaPage(QtWidgets.QWidget):
         self.kana_label = QtWidgets.QLabel("—", self.q_page)
         self.kana_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         f = self.kana_label.font()
-        f.setPointSize(64)
+        #f.setPointSize(64)
+        f.setPointSize(128)
         f.setBold(True)
         self.kana_label.setFont(f)
 

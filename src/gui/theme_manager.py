@@ -20,7 +20,7 @@ THEMES = {
         },
         "stylesheet": """
             QWidget {
-                font-size: 14px;
+                font-size: 24px;
             }
             QPushButton {
                 border: 1px solid #999;
@@ -53,7 +53,7 @@ THEMES = {
         },
         "stylesheet": """
             QWidget {
-                font-size: 14px;
+                font-size: 24px;
             }
             QPushButton {
                 border: 1px solid #666;

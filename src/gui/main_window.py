@@ -30,12 +30,6 @@ class MainWindow(QMainWindow):
 
     def connect_home_page_buttons(self):
         """Connect home page buttons to their respective pages"""
-        self.home_page.btn_handwriting.clicked.connect(
-            lambda: self.stack.setCurrentWidget(self.handwriting_page)
-        )
-        # self.home_page.btn_cards.clicked.connect(
-        #     lambda: self.stack.setCurrentWidget(self.cards_page)
-        # )
         self.home_page.btn_review_kana.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.review_kana_page)
         )
@@ -57,9 +51,9 @@ class MainWindow(QMainWindow):
         self.home_page.btn_fill_blank.clicked.connect(
             lambda: self.stack.setCurrentWidget(self.fill_blank_page)
         )
-        self.home_page.btn_import.clicked.connect(
-            lambda: self.stack.setCurrentWidget(self.import_page)
-        )
+        # self.home_page.btn_import.clicked.connect(
+        #     lambda: self.stack.setCurrentWidget(self.import_page)
+        # )
         
 
     def setup_theme_menu(self):
@@ -113,14 +107,14 @@ class MainWindow(QMainWindow):
 
         MenuBarLayout.addStretch()      # seperate page button on left and settings on right
 
-        # SETTINGS LAYOUT #
+        # # SETTINGS LAYOUT #
         self.settings_btn = QPushButton(QIcon("assests/settings.png"), "")
         
         self.settings_menu = QMenu()
-        hard_review = QAction("Harder Review", self)
-        hard_review.setCheckable(True)
+        #hard_review = QAction("Harder Review", self)
+        #hard_review.setCheckable(True)
         
-        self.settings_menu.addAction(hard_review)
+        #self.settings_menu.addAction(hard_review)
         self.settings_btn.setMenu(self.settings_menu)
 
         self.setup_theme_menu()
@@ -131,11 +125,11 @@ class MainWindow(QMainWindow):
 
         # Add pages
         self.home_page = HomePage(self)
-        self.handwriting_page = HandwritingManager(self)
+        #self.handwriting_page = HandwritingManager(self)
         # self.cards_page = CardsInterface(self)
         # self.review = ReviewScheduler(self)
         # self.qna_page = QNAPage(self)
-        self.import_page = ImportPage(self)
+        #self.import_page = ImportPage(self)
         self.learn_kana_page = LearnKanaWidget(self)
         self.learn_kanji_page = LearnKanjiWidget(self)
         self.learn_phrase_page = LearnPhrasePage(self)
@@ -163,20 +157,14 @@ class MainWindow(QMainWindow):
 
 
 
-        self.stack.addWidget(self.import_page)
+        # self.stack.addWidget(self.import_page)
         self.stack.addWidget(self.home_page)
-        self.stack.addWidget(self.handwriting_page)
-  #     self.stack.addWidget(self.cards_page)
-  #     self.stack.addWidget(self.review)
-  #     self.stack.addWidget(self.qna_page)
         self.stack.addWidget(self.learn_kana_page)
         self.stack.addWidget(self.learn_kanji_page)
         self.stack.addWidget(self.learn_phrase_page)
         self.stack.addWidget(self.fill_blank_page)
-        #self.stack.addWidget(self.review_scheduler)
         self.stack.addWidget(self.review_kana_page)
         self.stack.addWidget(self.review_kanji_page)
-        self.stack.addWidget(self.review_phrase_page)
         
         # Start on home
         self.stack.setCurrentWidget(self.home_page)
@@ -186,16 +174,10 @@ class MainWindow(QMainWindow):
         
         # Add pages to the menu
         self.add_page_to_menu('Home', self.home_page)
-        self.add_page_to_menu('Import', self.import_page)
-        self.add_page_to_menu('Handwriting Manager', self.handwriting_page)
-   #    self.add_page_to_menu('Cards Interface', self.cards_page)
-        #self.add_page_to_menu('Review', self.review)
-        #self.add_page_to_menu('QNA', self.qna_page)
         self.add_page_to_menu('Learn Kana', self.learn_kana_page)
         self.add_page_to_menu('Learn Kanji', self.learn_kanji_page)
         self.add_page_to_menu('Learn Phrase', self.learn_phrase_page)
         self.add_page_to_menu('Complete the Sentence', self.fill_blank_page)
-    #   self.add_page_to_menu('Review Scheduler', self.review_scheduler)
         self.add_page_to_menu('Review Kana', self.review_kana_page)
         self.add_page_to_menu('Review Kanji', self.review_kanji_page)
         self.add_page_to_menu('Review Phrase', self.review_phrase_page)

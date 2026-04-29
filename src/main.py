@@ -2,6 +2,7 @@
 
 #### IMPORTS ###################################################################
 import sys
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication
 from gui.main_window import MainWindow
 from gui.theme_manager import ThemeManager

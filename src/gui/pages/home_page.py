@@ -76,9 +76,9 @@ class HomePage(QWidget):
         horizontal_learn_buttons_widget.setLayout(cards_layout_learn)
 
         # Buttons - store as instance variables for connection in MainWindow
-        self.btn_handwriting = QPushButton("Handwriting Manager")
+        # self.btn_handwriting = QPushButton("Handwriting Manager")
         # self.btn_type = QPushButton("Cards Type Manager")
-        self.btn_import = QPushButton("Import")
+        # self.btn_import = QPushButton("Import")
         
         # Button StyleSheets
         self.btn_review_kana.setStyleSheet(bttn_design)
@@ -88,8 +88,8 @@ class HomePage(QWidget):
         self.btn_learn_kanji.setStyleSheet(bttn_design)
         self.btn_learn_phrase.setStyleSheet(bttn_design)
         self.btn_fill_blank.setStyleSheet(bttn_design)
-        self.btn_handwriting.setStyleSheet(bttn_design)
-        self.btn_import.setStyleSheet(bttn_design)
+        # self.btn_handwriting.setStyleSheet(bttn_design)
+        # self.btn_import.setStyleSheet(bttn_design)
         
         # Layout Design
         layout.addWidget(title)
@@ -97,9 +97,9 @@ class HomePage(QWidget):
         layout.addWidget(horizontal_review_buttons_widget)
         layout.addWidget(horizontal_learn_buttons_widget)
         layout.addWidget(self.btn_fill_blank)
-        layout.addWidget(self.btn_handwriting)
+        # layout.addWidget(self.btn_handwriting)
         # layout.addWidget(self.btn_type)
-        layout.addWidget(self.btn_import)
+        # layout.addWidget(self.btn_import)
        
 
         self.setLayout(layout)
